@@ -38,6 +38,12 @@ FSM tables storing, print output
 Methods for accessing created table
 Добавил в класс CFsmCreator методы GetStatesCount и GetTableRow для доступа к построенной таблице.
 
+06.06.2016
+Came to the natural bit order, comments on it
+Сделал для шаблонов естественный порядок битов: первый бит в старшем разряде байта, если последний
+байт неполный, то его значащими являются младшие биты (соответствующее количество).
+Написал подробный комментарий об этом перед определением структуры SPattern.
+
 08.06.2016
 Translated README into Russian
 Добавил языковые ссылки и перевёл скудное пока описание (README.md) на русский язык.

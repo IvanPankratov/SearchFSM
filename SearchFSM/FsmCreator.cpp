@@ -4,15 +4,28 @@
 #define BITS_IN_BYTE 8
 #endif
 
-unsigned char GetBit(const TData &data, int nBit) {
+unsigned char GetHiBit(const unsigned char bData, int nBit) {
+	return (bData >> (BITS_IN_BYTE - nBit - 1)) & 0x01;
+}
+
+//unsigned char GetBit(const unsigned char bData, int nBit) {
+//	return (bData >> nBit) & 0x01;
+//}
+
+unsigned char GetBit(const TData &data, int nBit, int nLength) {
+	int nBytesCount = (nLength - 1) / BITS_IN_BYTE + 1;
 	int nByteIdx = nBit / BITS_IN_BYTE;
 	int nBitIdx = nBit % BITS_IN_BYTE;
+	if (nByteIdx == nBytesCount - 1) { // last byte (possibly not whole)
+		int nBitsInLastByte = (nLength - 1) % BITS_IN_BYTE + 1;
+		nBitIdx += BITS_IN_BYTE - nBitsInLastByte;
+	}
 	unsigned char bData = data[nByteIdx];
-	return (bData >> nBitIdx) & 0x01;
+	return GetHiBit(bData, nBitIdx);
 }
 
 unsigned char GetBit(const SPattern &pattern, int nBit) {
-	return GetBit(pattern.data, nBit);
+	return GetBit(pattern.data, nBit, pattern.nLength);
 }
 
 unsigned char GetMaskBit(const SPattern &pattern, int nBit) {
@@ -20,7 +33,21 @@ unsigned char GetMaskBit(const SPattern &pattern, int nBit) {
 		return 0x01; // aways true
 	}
 
-	return GetBit(pattern.mask, nBit);
+	return GetBit(pattern.mask, nBit, pattern.nLength);
+}
+
+QString PatternToString(const SPattern &pattern) {
+	QString sPattern;
+	int nBit;
+	for (nBit = 0; nBit < pattern.nLength; nBit++) {
+		if (GetMaskBit(pattern, nBit) != 0) {
+			sPattern.append(QString::number(GetBit(pattern, nBit)));
+		} else {
+			sPattern.append("-");
+		}
+	}
+
+	return sPattern;
 }
 
 
