@@ -67,6 +67,14 @@ bool CFsmCreator::GenerateTables() {
 	return true;
 }
 
+int CFsmCreator::GetStatesCount() const {
+	return m_states.count();
+}
+
+STableRow CFsmCreator::GetTableRow(int nRow) const {
+	return m_table[nRow];
+}
+
 STableCell CFsmCreator::TransitState(const CFsmCreator::SStateDescription &state, unsigned char bBit) {
 	// create next state
 	int idx, nCount = state.parts.count();

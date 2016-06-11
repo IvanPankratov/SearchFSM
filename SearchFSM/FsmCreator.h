@@ -32,13 +32,15 @@ struct STableRow {
 
 
 //////////////////////////////////////////////////////////////////////////
-/// \brief The CFsmCreator class - builds tables for FSM
+/// \brief The CFsmCreator class - builds tables for Searching FSM
 class CFsmCreator {
 public:
 	CFsmCreator(const TPatterns &patterns);
 
 public:
 	bool GenerateTables();
+	int GetStatesCount() const;
+	STableRow GetTableRow(int nRow) const;
 
 private:
 	struct SStatePart {

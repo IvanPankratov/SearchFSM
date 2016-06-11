@@ -34,6 +34,10 @@ FSM tables storing, print output
 Сохранение таблиц при их генерации, запоминание выхода вместе с новым состоянием.
 Вывод на экран выхода автомата при соответствующем переходе.
 
+24.05.2016
+Methods for accessing created table
+Добавил в класс CFsmCreator методы GetStatesCount и GetTableRow для доступа к построенной таблице.
+
 08.06.2016
 Translated README into Russian
 Добавил языковые ссылки и перевёл скудное пока описание (README.md) на русский язык.
