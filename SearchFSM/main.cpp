@@ -1,6 +1,8 @@
 #include <QCoreApplication>
+#include <QVector>
 
 #include "FsmCreator.h"
+#include "SearchFsm.h"
 
 void Print(const SPattern &pattern) {
 	puts(PatternToString(pattern).toLocal8Bit().constData());
@@ -36,6 +38,28 @@ int main(int argc, char *argv[]) {
 
 	CFsmCreator fsm(patterns);
 	fsm.GenerateTables();
+
+	// try to create tables acceptable by CSearchFsm
+	typedef CSearchFsm<unsigned int, unsigned int> TSearchFsm;
+	QVector<TSearchFsm::STableRow> rows;
+	QVector<TSearchFsm::SOutput> outputs;
+	int nRow;
+	for (nRow = 0; nRow < fsm.GetStatesCount(); nRow++) {
+		STableRow row = fsm.GetTableRow(nRow);
+		TSearchFsm::STableCell cell0;
+		cell0.idxNextState = row.cell0.nNextState;
+		cell0.idxOutput = TSearchFsm::sm_outputNull; // no output yet
+
+		TSearchFsm::STableCell cell1;
+		cell1.idxNextState = row.cell1.nNextState;
+		cell1.idxOutput = TSearchFsm::sm_outputNull; // no output yet
+
+		TSearchFsm::STableRow fsmRow = {cell0, cell1};
+		rows.append(fsmRow);
+	}
+	TSearchFsm::STable table = {rows.constData(), outputs.constData(), rows.count(), outputs.count()};
+	TSearchFsm searchFsm(table);
+	searchFsm.PushBit(0);
 
 	return 0;
 }

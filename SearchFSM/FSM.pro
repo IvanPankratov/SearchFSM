@@ -19,4 +19,5 @@ SOURCES += main.cpp \
     FsmCreator.cpp
 
 HEADERS += \
-    FsmCreator.h
+    FsmCreator.h \
+    SearchFsm.h
