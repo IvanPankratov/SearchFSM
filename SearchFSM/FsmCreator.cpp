@@ -43,50 +43,82 @@ bool CFsmCreator::GenerateTables() {
 
 	m_states << state0;
 
+	m_table.clear();
 	int nCurrentState;
 	for (nCurrentState = 0; nCurrentState < m_states.count(); nCurrentState++) {
+		STableRow row;
 		const SStateDescription &state = m_states[nCurrentState];
-		int nState0 = TransitState(state, 0);
-		int nState1 = TransitState(state, 1);
+		row.cell0 = TransitState(state, 0);
+		row.cell1 = TransitState(state, 1);
+		m_table.append(row);
+
+		// output (for debug reason)
+		int nState0 = row.cell0.nNextState;
+		int nState1 = row.cell1.nNextState;
 		printf("%i: ", nCurrentState);
 		DumpState(state);
-		printf("\n%i =0=> %i\n%i =1=> %i\n\n", nCurrentState, nState0, nCurrentState, nState1);
+		printf("\n%i =0=> %i", nCurrentState, nState0);
+		DumpOutput(row.cell0.output);
+		printf("\n%i =1=> %i", nCurrentState, nState1);
+		DumpOutput(row.cell1.output);
+		printf("\n\n");
 	}
 
 	return true;
 }
 
-int CFsmCreator::TransitState(const CFsmCreator::SStateDescription &state, unsigned char bBit) {
+STableCell CFsmCreator::TransitState(const CFsmCreator::SStateDescription &state, unsigned char bBit) {
 	// create next state
 	int idx, nCount = state.parts.count();
+	TOutputList outputList;
 	SStateDescription newState;
 	for (idx = 0; idx < nCount; idx++) {
-		newState.parts << ProcessBitForPattern(state.parts[idx], m_patterns[idx], bBit);
+		SBitResultForPattern bitResult = ProcessBitForPattern(state.parts[idx], m_patterns[idx], bBit);
+		newState.parts << bitResult.newStatePart;
+		if (bitResult.fFound) {
+			// pattern found
+			SOutput output;
+			output.nPatternIdx = idx;
+			output.nErrors = bitResult.nErrors;
+			output.nPosition = m_patterns[idx].nLength;
+			outputList << output;
+		}
 	}
 
 	// look for the same state in the list of the states
 	int nStatesCount = m_states.count();
+	int nNewStateIdx = -1;
 	for (idx = 0; idx < nStatesCount; idx++) {
 		if (AreEqual(newState, m_states[idx])) { // found the same state
-			return idx;
+			nNewStateIdx = idx;
+			break;
 		}
 	}
 
 	// the state is not found - store it
-	m_states.append(newState);
-	int nNewStateIdx = m_states.count() - 1;
-	return nNewStateIdx;
+	if (nNewStateIdx == -1) {
+		m_states.append(newState);
+		nNewStateIdx = m_states.count() - 1;
+	}
+
+	STableCell cell;
+	cell.nNextState = nNewStateIdx;
+	cell.output = outputList;
+	return cell;
 }
 
-CFsmCreator::SStatePart CFsmCreator::ProcessBitForPattern(const CFsmCreator::SStatePart &part, const SPattern &pattern, unsigned char bBit) {
-	SStatePart newPart;
+CFsmCreator::SBitResultForPattern CFsmCreator::ProcessBitForPattern(const CFsmCreator::SStatePart &part, const SPattern &pattern, unsigned char bBit) {
+	SBitResultForPattern result;
+	result.fFound = false;
+	result.nErrors = -1;
+	SStatePart newStatePart;
 	// process errors in the very first bit - position 0
 	int nErrors0 = 0;
 	if (GetMaskBit(pattern, 0) != 0) {
 		// first bit is significnt
 		nErrors0 += bBit ^ GetBit(pattern, 0);
 	}
-	newPart.nsErrors << nErrors0;
+	newStatePart.nsErrors << nErrors0;
 
 	// process all the other bits
 	int idx, nCount = part.nsErrors.count();
@@ -100,21 +132,23 @@ CFsmCreator::SStatePart CFsmCreator::ProcessBitForPattern(const CFsmCreator::SSt
 		}
 
 		if (nPosition < pattern.nLength - 1) {
-			newPart.nsErrors << nErrors;
-		} else if (nErrors <= pattern.nMaxErrors){
-			printf("*");
+			newStatePart.nsErrors << nErrors;
+		} else if (nErrors <= pattern.nMaxErrors) { // found!
+			result.fFound = true;
+			result.nErrors = nErrors;
 		}
 	}
 
-	while (!newPart.nsErrors.isEmpty()) {
-		if (newPart.nsErrors.last() > pattern.nMaxErrors) {
-			newPart.nsErrors.removeLast();
+	while (!newStatePart.nsErrors.isEmpty()) {
+		if (newStatePart.nsErrors.last() > pattern.nMaxErrors) {
+			newStatePart.nsErrors.removeLast();
 		} else {
 			break;
 		}
 	}
 
-	return newPart;
+	result.newStatePart = newStatePart;
+	return result;
 }
 
 bool CFsmCreator::AreEqual(const CFsmCreator::SStateDescription &state1, const CFsmCreator::SStateDescription &state2) {
@@ -164,4 +198,31 @@ void CFsmCreator::DumpStatePart(const CFsmCreator::SStatePart &part, const SPatt
 			}
 		}
 	}
+}
+
+void CFsmCreator::DumpOutput(const TOutputList &output) {
+	if (output.isEmpty()) {
+		return;
+	}
+
+	printf(" {");
+	int idx, nCount = output.count();
+	bool fFirst = true;
+	for (idx = 0; idx < nCount; idx++) {
+		// print comma if necessary
+		if (fFirst) {
+			fFirst = false;
+		} else {
+			printf(", ");
+		}
+
+		SOutput out = output[idx];
+		int nErrors = out.nErrors;
+		if (nErrors == 0 ) {
+			printf("%i", out.nPatternIdx);
+		} else {
+			printf("%i-%i", out.nPatternIdx, nErrors);
+		}
+	}
+	printf("}");
 }

@@ -30,6 +30,9 @@ struct STableRow {
 	STableCell cell0, cell1;
 };
 
+
+//////////////////////////////////////////////////////////////////////////
+/// \brief The CFsmCreator class - builds tables for FSM
 class CFsmCreator {
 public:
 	CFsmCreator(const TPatterns &patterns);
@@ -42,22 +45,30 @@ private:
 		QList<int> nsErrors; // errors in pattern prefixes
 	};
 
+	struct SBitResultForPattern {
+		SStatePart newStatePart;
+		bool fFound;
+		int nErrors; // valid only if fFound = true
+	};
+
 	struct SStateDescription {
 		QList<SStatePart> parts;
 	};
 
 private:
-	int TransitState(const SStateDescription &state, unsigned char bBit);
-	static SStatePart ProcessBitForPattern(const SStatePart &part, const SPattern &pattern, unsigned char bBit);
+	STableCell TransitState(const SStateDescription &state, unsigned char bBit);
+	static SBitResultForPattern ProcessBitForPattern(const SStatePart &part, const SPattern &pattern, unsigned char bBit);
 
 private:
 	static bool AreEqual(const SStateDescription &state1, const SStateDescription &state2);
 	void DumpState(const SStateDescription &state);
 	void DumpStatePart(const SStatePart &part, const SPattern &pattern);
+	void DumpOutput(const TOutputList &output);
 
 private:
 	const TPatterns m_patterns;
 	QList<SStateDescription> m_states;
+	QList<STableRow> m_table;
 };
 
 #endif // FSMCREATOR_H
