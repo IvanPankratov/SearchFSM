@@ -36,7 +36,9 @@ private:
 	static SStatePart ProcessBitForPattern(const SStatePart &part, const SPattern &pattern, unsigned char bBit);
 
 private:
-	static bool Compare(const SStateDescription &state1, const SStateDescription &state2);
+	static bool AreEqual(const SStateDescription &state1, const SStateDescription &state2);
+	void DumpState(const SStateDescription &state);
+	void DumpStatePart(const SStatePart &part, const SPattern &pattern);
 
 private:
 	const TPatterns m_patterns;
