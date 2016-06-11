@@ -15,6 +15,21 @@ struct SPattern {
 
 typedef QList<SPattern> TPatterns;
 
+struct SOutput {
+	int nPatternIdx;
+	int nErrors;
+	int nPosition;
+};
+typedef QList<SOutput> TOutputList;
+
+struct STableCell {
+	int nNextState;
+	TOutputList output;
+};
+struct STableRow {
+	STableCell cell0, cell1;
+};
+
 class CFsmCreator {
 public:
 	CFsmCreator(const TPatterns &patterns);
