@@ -9,6 +9,9 @@ Transition table creation code (only prints), dumping method
 найденных шаблонов.
 Добавлены методы для получения определённого бита двоичной последовательности и вывода описания
 состояний.
+-
+Testing code in main.cpp
+Добавил тестирующий код в main.cpp.
 
 08.06.2016
 Translated README into Russian
