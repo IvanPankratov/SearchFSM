@@ -11,6 +11,18 @@ unsigned char GetBit(const TData &data, int nBit) {
 	return (bData >> nBitIdx) & 0x01;
 }
 
+unsigned char GetBit(const SPattern &pattern, int nBit) {
+	return GetBit(pattern.data, nBit);
+}
+
+unsigned char GetMaskBit(const SPattern &pattern, int nBit) {
+	if (pattern.mask.isEmpty()) { // no mask given
+		return 0x01; // aways true
+	}
+
+	return GetBit(pattern.mask, nBit);
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // CFsmCreator
@@ -70,9 +82,9 @@ CFsmCreator::SStatePart CFsmCreator::ProcessBitForPattern(const CFsmCreator::SSt
 	SStatePart newPart;
 	// process errors in the very first bit - position 0
 	int nErrors0 = 0;
-	if (GetBit(pattern.mask, 0) != 0) {
+	if (GetMaskBit(pattern, 0) != 0) {
 		// first bit is significnt
-		nErrors0 += bBit ^ GetBit(pattern.data, 0);
+		nErrors0 += bBit ^ GetBit(pattern, 0);
 	}
 	newPart.nsErrors << nErrors0;
 
@@ -82,8 +94,8 @@ CFsmCreator::SStatePart CFsmCreator::ProcessBitForPattern(const CFsmCreator::SSt
 		int nErrors = part.nsErrors[idx];
 		int nPosition = idx + 1;
 		if (nErrors <= pattern.nMaxErrors) {
-			if (GetBit(pattern.mask, nPosition)) {
-				nErrors += bBit ^ GetBit(pattern.data, nPosition);
+			if (GetMaskBit(pattern, nPosition)) {
+				nErrors += bBit ^ GetBit(pattern, nPosition);
 			}
 		}
 
@@ -145,7 +157,11 @@ void CFsmCreator::DumpStatePart(const CFsmCreator::SStatePart &part, const SPatt
 			} else {
 				printf(", ");
 			}
-			printf("%i-%i", nPos + 1, nErrors);
+			if (nErrors == 0 ) {
+				printf("%i", nPos + 1);
+			} else {
+				printf("%i-%i", nPos + 1, nErrors);
+			}
 		}
 	}
 }

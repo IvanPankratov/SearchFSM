@@ -13,6 +13,12 @@ Transition table creation code (only prints), dumping method
 Testing code in main.cpp
 Добавил тестирующий код в main.cpp.
 
+19.05.2016
+Refactoring: optional pattern mask, output fix
+Сделал удобные функции для доступа к битам шаблонов и масок - теперь маску можно не задавать, если
+все биты шаблона существенны.
+Изменил вывод состояний: для перфиксов вообще без ошибок теперь нуль не пишется.
+
 08.06.2016
 Translated README into Russian
 Добавил языковые ссылки и перевёл скудное пока описание (README.md) на русский язык.

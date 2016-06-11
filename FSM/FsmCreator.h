@@ -10,7 +10,7 @@ struct SPattern {
 	int nLength; // bits count
 	int nMaxErrors; // maximum errors count acceptable by the searching FSM
 	TData data; // first bit is LSB of data[0]
-	TData mask; // positions marked by zero bits are insignificant
+	TData mask; // positions marked by zero bits are insignificant - optional field
 };
 
 typedef QList<SPattern> TPatterns;
