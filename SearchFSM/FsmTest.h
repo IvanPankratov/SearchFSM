@@ -17,6 +17,7 @@ public:
 
 public:
 	static SWrapFsm CreateFsm(const CFsmCreator &fsmCreator);
+	static bool TestFsm(TSearchFsm fsm);
 };
 
 #endif // FSMTEST_H

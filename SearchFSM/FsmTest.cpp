@@ -1,4 +1,10 @@
+#include <stdlib.h>
+
 #include "FsmTest.h"
+
+unsigned char RandomByte() {
+	return rand();
+}
 
 CFsmTest::SWrapFsm CFsmTest::CreateFsm(const CFsmCreator &fsmCreator) {
 	// convert tables to format acceptable by CSearchFsm
@@ -24,4 +30,22 @@ CFsmTest::SWrapFsm CFsmTest::CreateFsm(const CFsmCreator &fsmCreator) {
 	SWrapFsm fsm = {TSearchFsm(table), rows, outputs};
 
 	return fsm;
+}
+
+bool CFsmTest::TestFsm(TSearchFsm fsm) {
+	fsm.Reset();
+	int nDataLength = 30;
+	int idx;
+	for (idx = 0; idx < nDataLength; idx++) {
+		int nState = fsm.GetState();
+		unsigned char bBit = RandomByte() & 0x01;
+		int nOut = fsm.PushBit(bBit);
+		printf("%i =%i=> %i\n", nState, bBit, fsm.GetState());
+		while (nOut != TSearchFsm::sm_outputNull) {
+			// stub for output processing
+			break;
+		}
+	}
+
+	return true;
 }

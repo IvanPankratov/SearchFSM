@@ -5,7 +5,9 @@
 #include "FsmTest.h"
 
 void Print(const SPattern &pattern) {
-	puts(PatternToString(pattern).toLocal8Bit().constData());
+	QString sPattern = PatternToString(pattern);
+	sPattern = QString("%1, %2 errors").arg(sPattern).arg(pattern.nMaxErrors);
+	puts(sPattern.toLocal8Bit().constData());
 }
 
 int main(int argc, char *argv[]) {
@@ -37,13 +39,10 @@ int main(int argc, char *argv[]) {
 	CFsmCreator fsmCreator(patterns);
 	fsmCreator.GenerateTables();
 
+	Print(pat1);
+	Print(pat2);
 	CFsmTest::SWrapFsm fsmWrap = CFsmTest::CreateFsm(fsmCreator);
-	int nState = fsmWrap.fsm.GetState();
-	fsmWrap.fsm.PushBit(0);
-	printf("%i =0=> %i\n", nState, fsmWrap.fsm.GetState());
-	nState = fsmWrap.fsm.GetState();
-	fsmWrap.fsm.PushBit(1);
-	printf("%i =1=> %i\n", nState, fsmWrap.fsm.GetState());
+	CFsmTest::TestFsm(fsmWrap.fsm);
 
 	return 0;
 }
