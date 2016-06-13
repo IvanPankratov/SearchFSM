@@ -1,8 +1,8 @@
 #include <QCoreApplication>
-#include <QVector>
 
-#include "FsmCreator.h"
 #include "SearchFsm.h"
+#include "FsmCreator.h"
+#include "FsmTest.h"
 
 void Print(const SPattern &pattern) {
 	puts(PatternToString(pattern).toLocal8Bit().constData());
@@ -13,13 +13,11 @@ int main(int argc, char *argv[]) {
 
 	SPattern pat1;
 	pat1.data << 0x1e;
-//	pat1.mask << 0x1f;
 	pat1.nLength = 5;
 	pat1.nMaxErrors = 2;
 
 	SPattern pat2;
 	pat2.data << 0xaa;
-//	pat2.mask << 0x1f;
 	pat2.nLength = 8;
 	pat2.nMaxErrors = 2;
 
@@ -36,30 +34,16 @@ int main(int argc, char *argv[]) {
 	TPatterns patterns;
 	patterns /*<< patTwoParts*/ << pat1 << pat2;
 
-	CFsmCreator fsm(patterns);
-	fsm.GenerateTables();
+	CFsmCreator fsmCreator(patterns);
+	fsmCreator.GenerateTables();
 
-	// try to create tables acceptable by CSearchFsm
-	typedef CSearchFsm<unsigned int, unsigned int> TSearchFsm;
-	QVector<TSearchFsm::STableRow> rows;
-	QVector<TSearchFsm::SOutput> outputs;
-	int nRow;
-	for (nRow = 0; nRow < fsm.GetStatesCount(); nRow++) {
-		STableRow row = fsm.GetTableRow(nRow);
-		TSearchFsm::STableCell cell0;
-		cell0.idxNextState = row.cell0.nNextState;
-		cell0.idxOutput = TSearchFsm::sm_outputNull; // no output yet
-
-		TSearchFsm::STableCell cell1;
-		cell1.idxNextState = row.cell1.nNextState;
-		cell1.idxOutput = TSearchFsm::sm_outputNull; // no output yet
-
-		TSearchFsm::STableRow fsmRow = {cell0, cell1};
-		rows.append(fsmRow);
-	}
-	TSearchFsm::STable table = {rows.constData(), outputs.constData(), rows.count(), outputs.count()};
-	TSearchFsm searchFsm(table);
-	searchFsm.PushBit(0);
+	CFsmTest::SWrapFsm fsmWrap = CFsmTest::CreateFsm(fsmCreator);
+	int nState = fsmWrap.fsm.GetState();
+	fsmWrap.fsm.PushBit(0);
+	printf("%i =0=> %i\n", nState, fsmWrap.fsm.GetState());
+	nState = fsmWrap.fsm.GetState();
+	fsmWrap.fsm.PushBit(1);
+	printf("%i =1=> %i\n", nState, fsmWrap.fsm.GetState());
 
 	return 0;
 }

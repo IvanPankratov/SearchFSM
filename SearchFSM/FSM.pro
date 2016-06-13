@@ -16,8 +16,10 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp \
-    FsmCreator.cpp
+    FsmCreator.cpp \
+    FsmTest.cpp
 
 HEADERS += \
     FsmCreator.h \
-    SearchFsm.h
+    SearchFsm.h \
+    FsmTest.h
