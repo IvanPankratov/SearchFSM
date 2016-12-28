@@ -60,3 +60,7 @@ Created CSearchFsm template class for searching FSMs themselves
 13.06.2016
 Plans in todo.txt
 Создал файл todo.txt с планами дальнейшей работы.
+
+28.12.2016
+New plans in todo.txt
+Добавил в планы описание исследовательской части работы.
