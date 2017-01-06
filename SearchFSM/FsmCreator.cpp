@@ -57,7 +57,7 @@ CFsmCreator::CFsmCreator(const TPatterns &patterns):
 	m_patterns(patterns)
 {}
 
-bool CFsmCreator::GenerateTables() {
+bool CFsmCreator::GenerateTables(bool fVerbose) {
 	m_states.clear();
 	SStateDescription state0;
 	{ // create initial state - all the parts are empty
@@ -79,16 +79,18 @@ bool CFsmCreator::GenerateTables() {
 		row.cell1 = TransitState(state, 1);
 		m_table.append(row);
 
-		// output (for debug reason)
-		int nState0 = row.cell0.nNextState;
-		int nState1 = row.cell1.nNextState;
-		printf("%i: ", nCurrentState);
-		DumpState(state);
-		printf("\n%i =0=> %i", nCurrentState, nState0);
-		DumpOutput(row.cell0.output);
-		printf("\n%i =1=> %i", nCurrentState, nState1);
-		DumpOutput(row.cell1.output);
-		printf("\n\n");
+		if (fVerbose) {
+			// output (for debug reason)
+			int nState0 = row.cell0.nNextState;
+			int nState1 = row.cell1.nNextState;
+			printf("%i: ", nCurrentState);
+			DumpState(state);
+			printf("\n%i =0=> %i", nCurrentState, nState0);
+			DumpOutput(row.cell0.output);
+			printf("\n%i =1=> %i", nCurrentState, nState1);
+			DumpOutput(row.cell1.output);
+			printf("\n\n");
+		}
 	}
 
 	return true;

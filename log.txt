@@ -100,3 +100,7 @@ CFsmCreator.
 Исправил одно предупреждение компилятора MinGW, связанное с беззнаковостью числа.
 Для самого класса автомата сделал типы полей patternIdx, stepBack и errorsCount
 параметризованными на всякий случай.
+-
+Optional debug output in CFsmCreator::GenerateTables
+Добавил в метод CFsmCreator::GenerateTables параметр fVerbose, подключающий отладочный вывод
+только при необходимости.

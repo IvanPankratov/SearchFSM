@@ -66,7 +66,7 @@ public:
 	CFsmCreator(const TPatterns &patterns);
 
 public:
-	bool GenerateTables();
+	bool GenerateTables(bool fVerbose = false);
 	int GetStatesCount() const;
 	STableRow GetTableRow(int nRow) const;
 
