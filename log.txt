@@ -91,3 +91,12 @@ fsm-test: output table, refactoring
 -
 Merge branch 'master' into fsm-test
 Conflicts: log.txt
+
+06.01.2017
+Rafactoring: field names etc.
+В файле SearchFSM/FsmCreator.h вспомогательные структуры и типы поместил внутрь описания класса
+CFsmCreator.
+Поле SOutput::nPosition переименовал в nStepBack, что лучше описывает его смысл.
+Исправил одно предупреждение компилятора MinGW, связанное с беззнаковостью числа.
+Для самого класса автомата сделал типы полей patternIdx, stepBack и errorsCount
+параметризованными на всякий случай.

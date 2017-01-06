@@ -8,7 +8,8 @@
 
 //////////////////////////////////////////////////////////////////////////
 /// \brief CSearchFsm<TStateIdx, TOutputIdx> class - template for SearchFSM
-template <class TStateIdx = unsigned int, class TOutputIdx = unsigned int>
+template <class TStateIdx = unsigned int, class TOutputIdx = unsigned int, class TPatternIdx = unsigned int,
+	class TStepBack = unsigned int, class TErrorsCount = unsigned int>
 class CSearchFsm {
 public:
 	static const TOutputIdx sm_outputNull = (TOutputIdx)(-1);
@@ -24,9 +25,9 @@ public:
 
 	// Output table structures
 	struct SOutput {
-		unsigned char bPatternIdx;
-		unsigned char bErrors;
-		unsigned char bPosition;
+		TPatternIdx patternIdx;
+		TStepBack stepBack;
+		TErrorsCount errorsCount;
 		TOutputIdx idxNextOutput; // used for output chains, when found more than one pattern at once
 	};
 

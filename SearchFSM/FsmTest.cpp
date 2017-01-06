@@ -12,7 +12,7 @@ CFsmTest::SWrapFsm CFsmTest::CreateFsm(const CFsmCreator &fsmCreator) {
 	TOutputTable outputs;
 	int nRow;
 	for (nRow = 0; nRow < fsmCreator.GetStatesCount(); nRow++) {
-		STableRow row = fsmCreator.GetTableRow(nRow);
+		CFsmCreator::STableRow row = fsmCreator.GetTableRow(nRow);
 		TSearchFsm::STableCell cell0;
 		cell0.idxNextState = row.cell0.nNextState;
 		TOutputIdx idxOutput0 = StoreOutputList(row.cell0.output, &outputs);
@@ -41,16 +41,16 @@ bool CFsmTest::TestFsm(TSearchFsm fsm) {
 	for (idx = 0; idx < nDataLength; idx++) {
 		int nState = fsm.GetState();
 		unsigned char bBit = RandomByte() & 0x01;
-		int nOut = fsm.PushBit(bBit);
+		unsigned int nOut = fsm.PushBit(bBit);
 		printf("%i =%i=> %i", nState, bBit, fsm.GetState());
 		if (nOut != TSearchFsm::sm_outputNull) {
 			printf(" {");
 			const TSearchFsm::SOutput &out = fsm.GetOutput(nOut);
-			printf("(%i, %i, %i)", out.bPatternIdx, out.bErrors, out.bPosition);
+			printf("(%i, %i, %i)", out.patternIdx, out.errorsCount, out.stepBack);
 			nOut = out.idxNextOutput;
 			while (nOut != TSearchFsm::sm_outputNull) {
 				const TSearchFsm::SOutput &out = fsm.GetOutput(nOut);
-				printf(", (%i, %i, %i)", out.bPatternIdx, out.bErrors, out.bPosition);
+				printf(", (%i, %i, %i)", out.patternIdx, out.errorsCount, out.stepBack);
 				nOut = out.idxNextOutput;
 			}
 			printf("}");
@@ -61,7 +61,7 @@ bool CFsmTest::TestFsm(TSearchFsm fsm) {
 	return true;
 }
 
-CFsmTest::TOutputIdx CFsmTest::StoreOutputList(const TOutputList &outputList, CFsmTest::TOutputTable *pOutputTable) {
+CFsmTest::TOutputIdx CFsmTest::StoreOutputList(const CFsmCreator::TOutputList &outputList, CFsmTest::TOutputTable *pOutputTable) {
 	if (outputList.isEmpty()) {
 		return TSearchFsm::sm_outputNull;
 	}
@@ -69,11 +69,11 @@ CFsmTest::TOutputIdx CFsmTest::StoreOutputList(const TOutputList &outputList, CF
 	int idx;
 	TOutputIdx idxNext = TSearchFsm::sm_outputNull;
 	for (idx = outputList.count() - 1; idx >= 0; idx--) {
-		SOutput out = outputList[idx];
+		CFsmCreator::SOutput out = outputList[idx];
 		TSearchFsm::SOutput outputNew;
-		outputNew.bPatternIdx = out.nPatternIdx;
-		outputNew.bErrors = out.nErrors;
-		outputNew.bPosition = out.nPosition;
+		outputNew.patternIdx = out.nPatternIdx;
+		outputNew.errorsCount = out.nErrors;
+		outputNew.stepBack = out.nStepBack;
 		outputNew.idxNextOutput = idxNext;
 		idxNext = StoreOutput(outputNew, pOutputTable);
 	}
@@ -94,6 +94,6 @@ CFsmTest::TOutputIdx CFsmTest::StoreOutput(const TSearchFsm::SOutput &output, CF
 }
 
 bool CFsmTest::IsEqual(const TSearchFsm::SOutput &output1, const TSearchFsm::SOutput &output2) {
-	return (output1.bPatternIdx == output2.bPatternIdx) && (output1.bErrors == output2.bErrors) &&
-		(output1.bPosition == output2.bPosition) && (output1.idxNextOutput == output2.idxNextOutput);
+	return (output1.patternIdx == output2.patternIdx) && (output1.errorsCount == output2.errorsCount) &&
+		(output1.stepBack == output2.stepBack) && (output1.idxNextOutput == output2.idxNextOutput);
 }

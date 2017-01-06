@@ -42,25 +42,26 @@ QString PatternToString(const SPattern &pattern);
 
 typedef QList<SPattern> TPatterns;
 
-struct SOutput {
-	int nPatternIdx;
-	int nErrors;
-	int nPosition;
-};
-typedef QList<SOutput> TOutputList;
-
-struct STableCell {
-	int nNextState;
-	TOutputList output;
-};
-struct STableRow {
-	STableCell cell0, cell1;
-};
-
 
 //////////////////////////////////////////////////////////////////////////
 /// \brief The CFsmCreator class - builds tables for Searching FSM
 class CFsmCreator {
+public:
+	struct SOutput {
+		int nPatternIdx;
+		int nErrors;
+		int nStepBack;
+	};
+	typedef QList<SOutput> TOutputList;
+
+	struct STableCell {
+		int nNextState;
+		TOutputList output;
+	};
+	struct STableRow {
+		STableCell cell0, cell1;
+	};
+
 public:
 	CFsmCreator(const TPatterns &patterns);
 

@@ -98,11 +98,11 @@ int CFsmCreator::GetStatesCount() const {
 	return m_states.count();
 }
 
-STableRow CFsmCreator::GetTableRow(int nRow) const {
+CFsmCreator::STableRow CFsmCreator::GetTableRow(int nRow) const {
 	return m_table[nRow];
 }
 
-STableCell CFsmCreator::TransitState(const CFsmCreator::SStateDescription &state, unsigned char bBit) {
+CFsmCreator::STableCell CFsmCreator::TransitState(const CFsmCreator::SStateDescription &state, unsigned char bBit) {
 	// create next state
 	int idx, nCount = state.parts.count();
 	TOutputList outputList;
@@ -115,7 +115,7 @@ STableCell CFsmCreator::TransitState(const CFsmCreator::SStateDescription &state
 			SOutput output;
 			output.nPatternIdx = idx;
 			output.nErrors = bitResult.nErrors;
-			output.nPosition = m_patterns[idx].nLength;
+			output.nStepBack = m_patterns[idx].nLength;
 			outputList << output;
 		}
 	}

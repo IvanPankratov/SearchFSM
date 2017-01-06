@@ -25,7 +25,7 @@ public:
 	static bool TestFsm(TSearchFsm fsm);
 
 private:
-	static TOutputIdx StoreOutputList(const TOutputList &outputList, /* in-out */ TOutputTable *pOutputTable);
+	static TOutputIdx StoreOutputList(const CFsmCreator::TOutputList &outputList, /* in-out */ TOutputTable *pOutputTable);
 	static TOutputIdx StoreOutput(const TSearchFsm::SOutput &output, /* in-out */ TOutputTable *pOutputTable);
 	static bool IsEqual(const TSearchFsm::SOutput &output1, const TSearchFsm::SOutput &output2);
 };
