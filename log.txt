@@ -104,3 +104,10 @@ CFsmCreator.
 Optional debug output in CFsmCreator::GenerateTables
 Добавил в метод CFsmCreator::GenerateTables параметр fVerbose, подключающий отладочный вывод
 только при необходимости.
+-
+Refactored CFsmTest to store the FSM in the members
+В класс CFsmTest добавил сам построенный автомат.
+Автомат теперь строится полностью в методе CFsmTest::CreateFsm по шаблонам.
+Вынес количество подаваемых битов в методе CFsmTest::TestFsm в параметр.
+Добавил комментарии, повысил качество кода.
+Устранил предупреждения компилятора.

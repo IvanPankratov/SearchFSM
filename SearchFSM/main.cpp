@@ -10,6 +10,13 @@ void Print(const SPattern &pattern) {
 	puts(sPattern.toLocal8Bit().constData());
 }
 
+void PrintPatterns(const TPatterns &patterns) {
+	int idx;
+	for (idx = 0; idx < patterns.count(); idx++) {
+		Print(patterns[idx]);
+	}
+}
+
 int main(int argc, char *argv[]) {
 	QCoreApplication a(argc, argv);
 
@@ -36,13 +43,10 @@ int main(int argc, char *argv[]) {
 	TPatterns patterns;
 	patterns /*<< patTwoParts*/ << pat1 << pat2;
 
-	CFsmCreator fsmCreator(patterns);
-	fsmCreator.GenerateTables();
-
-	Print(pat1);
-	Print(pat2);
-	CFsmTest::SWrapFsm fsmWrap = CFsmTest::CreateFsm(fsmCreator);
-	CFsmTest::TestFsm(fsmWrap.fsm);
+	CFsmTest tester;
+	PrintPatterns(patterns);
+	tester.CreateFsm(patterns);
+	tester.TestFsm(50);
 
 	return 0;
 }

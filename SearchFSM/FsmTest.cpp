@@ -6,13 +6,30 @@ unsigned char RandomByte() {
 	return rand();
 }
 
-CFsmTest::SWrapFsm CFsmTest::CreateFsm(const CFsmCreator &fsmCreator) {
+CFsmTest::CFsmTest() {
+	m_pFsm = NULL;
+}
+
+CFsmTest::~CFsmTest() {
+	ReleaseFsm();
+}
+
+bool CFsmTest::CreateFsm(const TPatterns &patterns) {
+	ReleaseFsm();
+
+	// store the patterns for the future
+	m_patterns = patterns;
+
+	// generate tables
+	CFsmCreator fsm(patterns);
+	fsm.GenerateTables();
+
 	// convert tables to format acceptable by CSearchFsm
 	TFsmTable rows;
 	TOutputTable outputs;
 	int nRow;
-	for (nRow = 0; nRow < fsmCreator.GetStatesCount(); nRow++) {
-		CFsmCreator::STableRow row = fsmCreator.GetTableRow(nRow);
+	for (nRow = 0; nRow < fsm.GetStatesCount(); nRow++) {
+		CFsmCreator::STableRow row = fsm.GetTableRow(nRow);
 		TSearchFsm::STableCell cell0;
 		cell0.idxNextState = row.cell0.nNextState;
 		TOutputIdx idxOutput0 = StoreOutputList(row.cell0.output, &outputs);
@@ -26,30 +43,41 @@ CFsmTest::SWrapFsm CFsmTest::CreateFsm(const CFsmCreator &fsmCreator) {
 		TSearchFsm::STableRow fsmRow = {cell0, cell1};
 		rows.append(fsmRow);
 	}
-	TSearchFsm::STable table = {rows.constData(), outputs.constData(), rows.count(), outputs.count()};
 
-	// create the FSM itself and wrap
-	SWrapFsm fsm = {TSearchFsm(table), rows, outputs};
+	// store the tables (with const_cast to disable write-protection)
+	const_cast<TFsmTable&>(m_rows) = rows;
+	const_cast<TOutputTable&>(m_outputs) = outputs;
 
-	return fsm;
+	// create the table describing structure
+	unsigned int dwRows = rows.count();
+	unsigned int dwOutputs = outputs.count();
+	TSearchFsm::STable table = {rows.constData(), outputs.constData(), dwRows, dwOutputs};
+
+	// create the FSM itself
+	m_pFsm = new TSearchFsm(table);
+
+	return true;
 }
 
-bool CFsmTest::TestFsm(TSearchFsm fsm) {
-	fsm.Reset();
-	int nDataLength = 50;
+bool CFsmTest::TestFsm(int nDataLength) {
+	if (m_pFsm == NULL) {
+		return false;
+	}
+
+	m_pFsm->Reset();
 	int idx;
 	for (idx = 0; idx < nDataLength; idx++) {
-		int nState = fsm.GetState();
+		int nState = m_pFsm->GetState();
 		unsigned char bBit = RandomByte() & 0x01;
-		unsigned int nOut = fsm.PushBit(bBit);
-		printf("%i =%i=> %i", nState, bBit, fsm.GetState());
+		unsigned int nOut = m_pFsm->PushBit(bBit);
+		printf("%i =%i=> %i", nState, bBit, m_pFsm->GetState());
 		if (nOut != TSearchFsm::sm_outputNull) {
 			printf(" {");
-			const TSearchFsm::SOutput &out = fsm.GetOutput(nOut);
+			const TSearchFsm::SOutput &out = m_pFsm->GetOutput(nOut);
 			printf("(%i, %i, %i)", out.patternIdx, out.errorsCount, out.stepBack);
 			nOut = out.idxNextOutput;
 			while (nOut != TSearchFsm::sm_outputNull) {
-				const TSearchFsm::SOutput &out = fsm.GetOutput(nOut);
+				const TSearchFsm::SOutput &out = m_pFsm->GetOutput(nOut);
 				printf(", (%i, %i, %i)", out.patternIdx, out.errorsCount, out.stepBack);
 				nOut = out.idxNextOutput;
 			}
@@ -61,6 +89,14 @@ bool CFsmTest::TestFsm(TSearchFsm fsm) {
 	return true;
 }
 
+void CFsmTest::ReleaseFsm() {
+	if (m_pFsm != NULL) {
+		delete m_pFsm;
+		m_pFsm = NULL;
+	}
+}
+
+// private
 CFsmTest::TOutputIdx CFsmTest::StoreOutputList(const CFsmCreator::TOutputList &outputList, CFsmTest::TOutputTable *pOutputTable) {
 	if (outputList.isEmpty()) {
 		return TSearchFsm::sm_outputNull;

@@ -14,20 +14,28 @@ public:
 
 	typedef QVector<TSearchFsm::STableRow> TFsmTable;
 	typedef QVector<TSearchFsm::SOutput> TOutputTable;
-	struct SWrapFsm {
-		TSearchFsm fsm; // uses \var rows and \var output fields, do NOT use this field separately
-		TFsmTable rows;
-		TOutputTable outputs;
-	};
 
 public:
-	static SWrapFsm CreateFsm(const CFsmCreator &fsmCreator);
-	static bool TestFsm(TSearchFsm fsm);
+	CFsmTest();
+	~CFsmTest();
+
+public:
+	bool CreateFsm(const TPatterns &patterns);
+	bool TestFsm(int nDataLength);
+	void ReleaseFsm();
 
 private:
 	static TOutputIdx StoreOutputList(const CFsmCreator::TOutputList &outputList, /* in-out */ TOutputTable *pOutputTable);
 	static TOutputIdx StoreOutput(const TSearchFsm::SOutput &output, /* in-out */ TOutputTable *pOutputTable);
 	static bool IsEqual(const TSearchFsm::SOutput &output1, const TSearchFsm::SOutput &output2);
+
+private:
+	TPatterns m_patterns;
+	TSearchFsm *m_pFsm;
+
+	// members for storing and releasing the tables
+	const TFsmTable m_rows;
+	const TOutputTable m_outputs;
 };
 
 #endif // FSMTEST_H
