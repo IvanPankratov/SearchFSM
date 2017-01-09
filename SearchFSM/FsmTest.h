@@ -20,11 +20,16 @@ public:
 	~CFsmTest();
 
 public:
-	bool CreateFsm(const TPatterns &patterns);
+	bool CreateFsm(const TPatterns &patterns, bool fVerbose = false);
 	bool TestFsm(int nDataLength);
 	void ReleaseFsm();
 
-private:
+private: // pseudo-random related members
+	unsigned int NextRandomEntity();
+	unsigned int NextRandom15Bits();
+	unsigned char RandomByte();
+
+private: // output table handling
 	static TOutputIdx StoreOutputList(const CFsmCreator::TOutputList &outputList, /* in-out */ TOutputTable *pOutputTable);
 	static TOutputIdx StoreOutput(const TSearchFsm::SOutput &output, /* in-out */ TOutputTable *pOutputTable);
 	static bool IsEqual(const TSearchFsm::SOutput &output1, const TSearchFsm::SOutput &output2);
@@ -36,6 +41,9 @@ private:
 	// members for storing and releasing the tables
 	const TFsmTable m_rows;
 	const TOutputTable m_outputs;
+
+	// random related data
+	unsigned int m_dwRandomSeed; // pseudo-random sequence entity
 };
 
 #endif // FSMTEST_H

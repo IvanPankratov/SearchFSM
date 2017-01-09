@@ -2,19 +2,16 @@
 
 #include "FsmTest.h"
 
-unsigned char RandomByte() {
-	return rand();
-}
-
 CFsmTest::CFsmTest() {
 	m_pFsm = NULL;
+	m_dwRandomSeed = 0;
 }
 
 CFsmTest::~CFsmTest() {
 	ReleaseFsm();
 }
 
-bool CFsmTest::CreateFsm(const TPatterns &patterns) {
+bool CFsmTest::CreateFsm(const TPatterns &patterns, bool fVerbose) {
 	ReleaseFsm();
 
 	// store the patterns for the future
@@ -22,7 +19,7 @@ bool CFsmTest::CreateFsm(const TPatterns &patterns) {
 
 	// generate tables
 	CFsmCreator fsm(patterns);
-	fsm.GenerateTables();
+	fsm.GenerateTables(fVerbose);
 
 	// convert tables to format acceptable by CSearchFsm
 	TFsmTable rows;
@@ -97,6 +94,30 @@ void CFsmTest::ReleaseFsm() {
 }
 
 // private
+// pseudo-random related members
+unsigned int CFsmTest::NextRandomEntity() {
+	// constants for LCG (stated to be good ones)
+	const unsigned int s_dwLcgConstA = 214013;
+	const unsigned int s_dwLcgConstC = 2531011;
+
+	// switch to the next member
+	m_dwRandomSeed = s_dwLcgConstA * m_dwRandomSeed + s_dwLcgConstC;
+	return m_dwRandomSeed;
+}
+
+unsigned int CFsmTest::NextRandom15Bits() {
+	const unsigned int s_dw15BitsMask = 0x00001fff;
+
+	// take bits 15-29 which are said to be the best distributed
+	return (NextRandomEntity() >> 15) & s_dw15BitsMask;
+}
+
+unsigned char CFsmTest::RandomByte() {
+	// take only 8 bits
+	return NextRandom15Bits();
+}
+
+// output table handling
 CFsmTest::TOutputIdx CFsmTest::StoreOutputList(const CFsmCreator::TOutputList &outputList, CFsmTest::TOutputTable *pOutputTable) {
 	if (outputList.isEmpty()) {
 		return TSearchFsm::sm_outputNull;

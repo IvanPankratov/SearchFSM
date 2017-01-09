@@ -111,3 +111,9 @@ Refactored CFsmTest to store the FSM in the members
 Вынес количество подаваемых битов в методе CFsmTest::TestFsm в параметр.
 Добавил комментарии, повысил качество кода.
 Устранил предупреждения компилятора.
+
+09.01.2017
+Linear congruent generator for testing, clean-up etc.
+Добавил в класс CFsmTest ЛКГ для тестирования работы автоматов и других методов поиска шаблонов.
+Пробросил параметр fVerbose в метод CFsmTest::CreateFsm.
+Удалил лишний вывод в main.cpp, добавил комментарии.

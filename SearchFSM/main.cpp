@@ -36,12 +36,8 @@ int main(int argc, char *argv[]) {
 	patTwoParts.nLength = 12;
 	patTwoParts.nMaxErrors = 1;
 
-	Print(patTwoParts);
-	Print(pat1);
-	Print(pat2);
-
 	TPatterns patterns;
-	patterns /*<< patTwoParts*/ << pat1 << pat2;
+	patterns << pat1 << pat2;// << patTwoParts;
 
 	CFsmTest tester;
 	PrintPatterns(patterns);
