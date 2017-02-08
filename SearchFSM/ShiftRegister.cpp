@@ -43,7 +43,7 @@ unsigned int CShiftRegister::TestPattern(const SPattern &pattern) const {
 	unsigned int cErrors = 0;
 	for (idx = 0; idx < m_Data.length(); idx++) {
 		const TChunk chunkDiff = (pChunks[idx] ^ pPatternChunks[idx]) & pMaskChunks[idx];
-		cErrors += Weight(chunkDiff);
+		cErrors += WeightTable(chunkDiff);
 	}
 
 	return cErrors;
@@ -77,4 +77,29 @@ unsigned int CShiftRegister::Weight(CShiftRegister::TChunk vector) {
 	TChunk vector32 = (vector16 + (vector16 >> 16)) & mask8n16;
 
 	return vector32;
+}
+
+unsigned int CShiftRegister::WeightTable(CShiftRegister::TChunk vector) {
+	union U32{
+		TChunk dw;
+		unsigned char bs[4];
+	} u32 = {vector};
+
+	int nWeight = ByteWeight(u32.bs[0]) + ByteWeight(u32.bs[1]) + ByteWeight(u32.bs[2]) + ByteWeight(u32.bs[3]);
+	return nWeight;
+}
+
+unsigned int CShiftRegister::ByteWeight(unsigned char bVector) {
+	static const unsigned int nWeight8Bit[] = {
+		0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
+		1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+		1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+		2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+		1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6,
+		2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+		2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7,
+		3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8
+	};
+
+	return nWeight8Bit[bVector];
 }

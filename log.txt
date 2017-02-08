@@ -161,3 +161,6 @@ CWinTimer class for time measurement
 -
 FSM and register rate measurement
 Добавил измерение скорости работы автомата и регистрового поиска.
+-
+CShiftRegister::TestPattern improved by table weight function
+Ускорил работу регистра сдвига за счёт использования табличного метода вычисления веса вектора.
