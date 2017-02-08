@@ -4,7 +4,7 @@
 
 CFsmTest::CFsmTest() {
 	m_pFsm = NULL;
-	m_dwRandomSeed = 0;
+	ResetLCG();
 }
 
 CFsmTest::~CFsmTest() {
@@ -56,29 +56,47 @@ bool CFsmTest::CreateFsm(const TPatterns &patterns, bool fVerbose) {
 	return true;
 }
 
-bool CFsmTest::TestFsm(int nDataLength) {
+void CFsmTest::DumpFinding(int nBitsProcessed, const TSearchFsm::SOutput &out)
+{
+	int nPosition = nBitsProcessed - out.stepBack;
+	if (out.errorsCount == 0) {
+		printf("#%i at %i", out.patternIdx, nPosition);
+	} else {
+		printf("#%i at %i (%i errors)", out.patternIdx, nPosition, out.errorsCount);
+	}
+
+	if (out.idxNextOutput != TSearchFsm::sm_outputNull) {
+		printf(", ");
+	}
+}
+
+bool CFsmTest::TraceFsm(int nDataLength) {
 	if (m_pFsm == NULL) {
 		return false;
 	}
 
 	m_pFsm->Reset();
+	ResetLCG();
+
+	unsigned char bData;
 	int idx;
 	for (idx = 0; idx < nDataLength; idx++) {
 		int nState = m_pFsm->GetState();
-		unsigned char bBit = RandomByte() & 0x01;
+		int nBit = idx % 8;
+		if (nBit == 0) { // new byte begins => update bData
+			bData = RandomByte();
+//			printf("0x%02x ", bData); // debug dumping
+		}
+		unsigned char bBit = GetHiBit(bData, nBit);
 		unsigned int nOut = m_pFsm->PushBit(bBit);
-		printf("%i =%i=> %i", nState, bBit, m_pFsm->GetState());
+		printf("%i: %i =%i=> %i", idx, nState, bBit, m_pFsm->GetState());
 		if (nOut != TSearchFsm::sm_outputNull) {
-			printf(" {");
-			const TSearchFsm::SOutput &out = m_pFsm->GetOutput(nOut);
-			printf("(%i, %i, %i)", out.patternIdx, out.errorsCount, out.stepBack);
-			nOut = out.idxNextOutput;
+			printf(" found ");
 			while (nOut != TSearchFsm::sm_outputNull) {
 				const TSearchFsm::SOutput &out = m_pFsm->GetOutput(nOut);
-				printf(", (%i, %i, %i)", out.patternIdx, out.errorsCount, out.stepBack);
+				DumpFinding(idx + 1, out);
 				nOut = out.idxNextOutput;
 			}
-			printf("}");
 		}
 		printf("\n");
 	}
@@ -115,6 +133,10 @@ unsigned int CFsmTest::NextRandom15Bits() {
 unsigned char CFsmTest::RandomByte() {
 	// take only 8 bits
 	return NextRandom15Bits();
+}
+
+void CFsmTest::ResetLCG() {
+	m_dwRandomSeed = 0;
 }
 
 // output table handling

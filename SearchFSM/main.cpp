@@ -13,6 +13,7 @@ void Print(const SPattern &pattern) {
 void PrintPatterns(const TPatterns &patterns) {
 	int idx;
 	for (idx = 0; idx < patterns.count(); idx++) {
+		printf("#%i ", idx);
 		Print(patterns[idx]);
 	}
 }
@@ -42,7 +43,7 @@ int main(int argc, char *argv[]) {
 	CFsmTest tester;
 	PrintPatterns(patterns);
 	tester.CreateFsm(patterns);
-	tester.TestFsm(50);
+	tester.TraceFsm(70);
 
 	return 0;
 }

@@ -42,6 +42,14 @@ QString PatternToString(const SPattern &pattern);
 
 typedef QList<SPattern> TPatterns;
 
+// bits manipulation routine
+#ifndef BITS_IN_BYTE
+#define BITS_IN_BYTE 8
+#endif
+
+inline unsigned char GetHiBit(const unsigned char bData, int nBit) {
+	return (bData >> (BITS_IN_BYTE - nBit - 1)) & 0x01;
+}
 
 //////////////////////////////////////////////////////////////////////////
 /// \brief The CFsmCreator class - builds tables for Searching FSM

@@ -21,13 +21,17 @@ public:
 
 public:
 	bool CreateFsm(const TPatterns &patterns, bool fVerbose = false);
-	bool TestFsm(int nDataLength);
+	bool TraceFsm(int nDataLength);
 	void ReleaseFsm();
+
+private:
+	void DumpFinding(int nBitsProcessed, const TSearchFsm::SOutput &out);
 
 private: // pseudo-random related members
 	unsigned int NextRandomEntity();
 	unsigned int NextRandom15Bits();
 	unsigned char RandomByte();
+	void ResetLCG();
 
 private: // output table handling
 	static TOutputIdx StoreOutputList(const CFsmCreator::TOutputList &outputList, /* in-out */ TOutputTable *pOutputTable);

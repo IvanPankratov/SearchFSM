@@ -117,3 +117,11 @@ Linear congruent generator for testing, clean-up etc.
 Добавил в класс CFsmTest ЛКГ для тестирования работы автоматов и других методов поиска шаблонов.
 Пробросил параметр fVerbose в метод CFsmTest::CreateFsm.
 Удалил лишний вывод в main.cpp, добавил комментарии.
+-
+Refactoring: CFsmTest::TraceFsm, output, etc.
+Переименовал CFsmTest::TestFsm в TraceFsm.
+Вынес обнуление переменной ПСП в метод ResetLCG().
+Обновил файл планов работ (todo.txt) - забыл пометить там выполненные пункты.
+Вынес функцию GetHiBit в заголовочный файл класса CFsmCreator и применил в классе CFsmTest.
+Переформатировал вывод в методе CFsmTest::TraceFsm: вместо отступа выдаётся позиция, в которой
+найден шаблон, строка стала более читабельной.

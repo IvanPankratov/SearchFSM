@@ -1,17 +1,5 @@
 #include "FsmCreator.h"
 
-#ifndef BITS_IN_BYTE
-#define BITS_IN_BYTE 8
-#endif
-
-unsigned char GetHiBit(const unsigned char bData, int nBit) {
-	return (bData >> (BITS_IN_BYTE - nBit - 1)) & 0x01;
-}
-
-//unsigned char GetBit(const unsigned char bData, int nBit) {
-//	return (bData >> nBit) & 0x01;
-//}
-
 unsigned char GetBit(const TData &data, int nBit, int nLength) {
 	int nBytesCount = (nLength - 1) / BITS_IN_BYTE + 1;
 	int nByteIdx = nBit / BITS_IN_BYTE;
