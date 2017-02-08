@@ -23,6 +23,7 @@ bool CFsmTest::CreateFsm(const TPatterns &patterns, bool fVerbose) {
 
 	// convert tables to format acceptable by CSearchFsm
 	TFsmTable rows;
+	rows.reserve(fsm.GetStatesCount());
 	TOutputTable outputs;
 	int nRow;
 	for (nRow = 0; nRow < fsm.GetStatesCount(); nRow++) {
@@ -41,6 +42,10 @@ bool CFsmTest::CreateFsm(const TPatterns &patterns, bool fVerbose) {
 		rows.append(fsmRow);
 	}
 
+	// release redundant memory
+	ASSERT(rows.capacity() == rows.count());
+	outputs.squeeze();
+
 	// store the tables (with const_cast to disable write-protection)
 	const_cast<TFsmTable&>(m_rows) = rows;
 	const_cast<TOutputTable&>(m_outputs) = outputs;
@@ -56,8 +61,7 @@ bool CFsmTest::CreateFsm(const TPatterns &patterns, bool fVerbose) {
 	return true;
 }
 
-void CFsmTest::DumpFinding(int nBitsProcessed, const TSearchFsm::SOutput &out)
-{
+void CFsmTest::DumpFinding(int nBitsProcessed, const TSearchFsm::SOutput &out) {
 	int nPosition = nBitsProcessed - out.stepBack;
 	if (out.errorsCount == 0) {
 		printf("#%i at %i", out.patternIdx, nPosition);
@@ -108,6 +112,74 @@ void CFsmTest::ReleaseFsm() {
 	if (m_pFsm != NULL) {
 		delete m_pFsm;
 		m_pFsm = NULL;
+	}
+}
+
+// table size quering methods
+CFsmTest::STableSize CFsmTest::GetTableSize() const {
+	STableSize size;
+	size.dwFsmTableSize = m_rows.count() * sizeof(TFsmTable::value_type);
+	size.dwOutputTableSize = m_outputs.count() * sizeof(TOutputTable::value_type);
+	size.dwTotalSize = size.dwFsmTableSize + size.dwOutputTableSize + sizeof(TSearchFsm::STable);
+
+	return size;
+}
+
+CFsmTest::STableSize CFsmTest::GetMinimalTableSize() const {
+	STableSize size;
+
+//	struct STableCell {
+//		TStateIdx idxNextState;
+//		TOutputIdx idxOutput;
+//	};
+	unsigned int dwStateIndexSize = GetMinimalDataSize(m_rows.count() - 1);
+	// mustn't forget about CSearchFsm::sm_outputNull
+	unsigned int dwOutputIndexSize = GetMinimalDataSize(m_outputs.count());
+	// table cell contains next state index and output index, and
+	unsigned int dwTableCellSize = dwStateIndexSize + dwOutputIndexSize;
+	unsigned int dwRowSize = dwTableCellSize * 2;
+	size.dwFsmTableSize = m_rows.count() * dwRowSize;
+
+//	struct SOutput {
+//		TPatternIdx patternIdx;
+//		TStepBack stepBack;
+//		TErrorsCount errorsCount;
+//		TOutputIdx idxNextOutput;
+//	};
+	unsigned int dwPatternIdxSize = GetMinimalDataSize(m_patterns.count() - 1);
+	int nMaxPatternLength = 0;
+	int nMaxErrorsCount = 0;
+	int idx;
+	for (idx = 0; idx < m_patterns.count(); idx++) {
+		int nLength = m_patterns[idx].nLength;
+		if (nMaxPatternLength < nLength) {
+			nMaxPatternLength = nLength;
+		}
+
+		int nErrorsCount = m_patterns[idx].nMaxErrors;
+		if (nMaxErrorsCount < nErrorsCount) {
+			nMaxErrorsCount = nErrorsCount;
+		}
+	}
+	unsigned int dwStepBackSize = GetMinimalDataSize(nMaxPatternLength);
+	unsigned int dwErrorsSize = GetMinimalDataSize(nMaxErrorsCount);
+	unsigned int dwOutputCellSize = dwPatternIdxSize + dwStepBackSize + dwErrorsSize + dwOutputIndexSize;
+
+	size.dwOutputTableSize = m_outputs.count() * dwOutputCellSize;
+	size.dwTotalSize = size.dwFsmTableSize + size.dwOutputTableSize + sizeof(TSearchFsm::STable);
+
+	return size;
+}
+
+unsigned int CFsmTest::GetMinimalDataSize(unsigned int nMaxValue) {
+	if (nMaxValue <= 0xff) { // single-byte integer is enough
+		return 1;
+	} else if (nMaxValue <= 0xffff) { // two-byte integer is enough
+		return 2;
+	} else if (nMaxValue <= 0xffffffff){ // four-byte integer is enough
+		return 4;
+	} else {
+		return 8;
 	}
 }
 

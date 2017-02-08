@@ -24,6 +24,19 @@ public:
 	bool TraceFsm(int nDataLength);
 	void ReleaseFsm();
 
+public: // table size quering methods
+	struct STableSize {
+		unsigned int dwTotalSize;
+		unsigned int dwFsmTableSize;
+		unsigned int dwOutputTableSize;
+	};
+
+	unsigned int GetStatesCount() const {return m_rows.count();}
+	unsigned int GetOutputElementsCount() const {return m_outputs.count();}
+	STableSize GetTableSize() const;
+	STableSize GetMinimalTableSize() const; // using the shortest integral types
+	static unsigned int GetMinimalDataSize(unsigned int nMaxValue);
+
 private:
 	void DumpFinding(int nBitsProcessed, const TSearchFsm::SOutput &out);
 
