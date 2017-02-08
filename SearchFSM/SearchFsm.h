@@ -1,3 +1,5 @@
+#line 2 "SearchFsm.h" // Make __FILE__ omit the path
+
 #ifndef SEARCHFSM_H
 #define SEARCHFSM_H
 

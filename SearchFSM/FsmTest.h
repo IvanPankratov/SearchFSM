@@ -1,3 +1,5 @@
+#line 2 "FsmTest.h" // Make __FILE__ omit the path
+
 #ifndef FSMTEST_H
 #define FSMTEST_H
 

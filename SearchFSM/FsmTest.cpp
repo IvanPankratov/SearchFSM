@@ -1,3 +1,5 @@
+#line 2 "FsmTest.cpp" // Make __FILE__ omit the path
+
 #include <stdlib.h>
 
 #include "FsmTest.h"

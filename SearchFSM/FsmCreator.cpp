@@ -1,3 +1,5 @@
+#line 2 "FsmCreator.cpp" // Make __FILE__ omit the path
+
 #include "FsmCreator.h"
 
 unsigned char GetBit(const TData &data, int nBit, int nLength) {

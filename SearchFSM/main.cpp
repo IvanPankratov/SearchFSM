@@ -1,3 +1,5 @@
+#line 2 "main.cpp" // Make __FILE__ omit the path
+
 #include <QCoreApplication>
 
 #include "SearchFsm.h"

@@ -1,3 +1,5 @@
+#line 2 "FsmCreator.h" // Make __FILE__ omit the path
+
 #ifndef FSMCREATOR_H
 #define FSMCREATOR_H
 
