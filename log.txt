@@ -144,3 +144,9 @@ Refactoting CFsmTest
 -
 Refactoring CFsmTest: extracting LCG
 Выделил линейный-конгруэнтный генератор в отдельный класс CLcg.
+
+27.01.2017
+Refactoring: Common.h
+Создал заголовочный файл Common.h для общих определений и типов.
+Вынес в него определение структуры SPattern, описывающей искомые шаблоны, функции для работы
+с ними, макрос BITS_IN_BYTE и функцию GetHiBit().

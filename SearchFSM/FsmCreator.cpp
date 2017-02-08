@@ -2,30 +2,6 @@
 
 #include "FsmCreator.h"
 
-unsigned char GetBit(const TData &data, int nBit, int nLength) {
-	int nBytesCount = (nLength - 1) / BITS_IN_BYTE + 1;
-	int nByteIdx = nBit / BITS_IN_BYTE;
-	int nBitIdx = nBit % BITS_IN_BYTE;
-	if (nByteIdx == nBytesCount - 1) { // last byte (possibly not whole)
-		int nBitsInLastByte = (nLength - 1) % BITS_IN_BYTE + 1;
-		nBitIdx += BITS_IN_BYTE - nBitsInLastByte;
-	}
-	unsigned char bData = data[nByteIdx];
-	return GetHiBit(bData, nBitIdx);
-}
-
-unsigned char GetBit(const SPattern &pattern, int nBit) {
-	return GetBit(pattern.data, nBit, pattern.nLength);
-}
-
-unsigned char GetMaskBit(const SPattern &pattern, int nBit) {
-	if (pattern.mask.isEmpty()) { // no mask given
-		return 0x01; // aways true
-	}
-
-	return GetBit(pattern.mask, nBit, pattern.nLength);
-}
-
 QString PatternToString(const SPattern &pattern) {
 	QString sPattern;
 	int nBit;
