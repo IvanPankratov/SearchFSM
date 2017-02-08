@@ -5,8 +5,10 @@
 #include "FsmTest.h"
 
 CFsmTest::CFsmTest() {
+	m_nMaxPatternLength = 0;
+	m_nMaxErrorsCount = 0;
 	m_pFsm = NULL;
-	ResetLCG();
+	ResetLcg();
 }
 
 CFsmTest::~CFsmTest() {
@@ -18,6 +20,7 @@ bool CFsmTest::CreateFsm(const TPatterns &patterns, bool fVerbose) {
 
 	// store the patterns for the future
 	m_patterns = patterns;
+	AnalysePatterns();
 
 	// generate tables
 	CFsmCreator fsm(patterns);
@@ -63,26 +66,13 @@ bool CFsmTest::CreateFsm(const TPatterns &patterns, bool fVerbose) {
 	return true;
 }
 
-void CFsmTest::DumpFinding(int nBitsProcessed, const TSearchFsm::SOutput &out) {
-	int nPosition = nBitsProcessed - out.stepBack;
-	if (out.errorsCount == 0) {
-		printf("#%i at %i", out.patternIdx, nPosition);
-	} else {
-		printf("#%i at %i (%i errors)", out.patternIdx, nPosition, out.errorsCount);
-	}
-
-	if (out.idxNextOutput != TSearchFsm::sm_outputNull) {
-		printf(", ");
-	}
-}
-
 bool CFsmTest::TraceFsm(int nDataLength) {
 	if (m_pFsm == NULL) {
 		return false;
 	}
 
 	m_pFsm->Reset();
-	ResetLCG();
+	ResetLcg();
 
 	unsigned char bData;
 	int idx;
@@ -149,6 +139,43 @@ CFsmTest::STableSize CFsmTest::GetMinimalTableSize() const {
 //		TOutputIdx idxNextOutput;
 //	};
 	unsigned int dwPatternIdxSize = GetMinimalDataSize(m_patterns.count() - 1);
+	unsigned int dwStepBackSize = GetMinimalDataSize(m_nMaxPatternLength);
+	unsigned int dwErrorsSize = GetMinimalDataSize(m_nMaxErrorsCount);
+	unsigned int dwOutputCellSize = dwPatternIdxSize + dwStepBackSize + dwErrorsSize + dwOutputIndexSize;
+
+	size.dwOutputTableSize = m_outputs.count() * dwOutputCellSize;
+	size.dwTotalSize = size.dwFsmTableSize + size.dwOutputTableSize + sizeof(TSearchFsm::STable);
+
+	return size;
+}
+
+// private
+unsigned int CFsmTest::GetMinimalDataSize(unsigned int nMaxValue) {
+	if (nMaxValue <= 0xff) { // single-byte integer is enough
+		return 1;
+	} else if (nMaxValue <= 0xffff) { // two-byte integer is enough
+		return 2;
+	} else if (nMaxValue <= 0xffffffff){ // four-byte integer is enough
+		return 4;
+	} else {
+		return 8;
+	}
+}
+
+void CFsmTest::DumpFinding(int nBitsProcessed, const TSearchFsm::SOutput &out) {
+	int nPosition = nBitsProcessed - out.stepBack;
+	if (out.errorsCount == 0) {
+		printf("#%i at %i", out.patternIdx, nPosition);
+	} else {
+		printf("#%i at %i (%i errors)", out.patternIdx, nPosition, out.errorsCount);
+	}
+
+	if (out.idxNextOutput != TSearchFsm::sm_outputNull) {
+		printf(", ");
+	}
+}
+
+void CFsmTest::AnalysePatterns() {
 	int nMaxPatternLength = 0;
 	int nMaxErrorsCount = 0;
 	int idx;
@@ -163,29 +190,11 @@ CFsmTest::STableSize CFsmTest::GetMinimalTableSize() const {
 			nMaxErrorsCount = nErrorsCount;
 		}
 	}
-	unsigned int dwStepBackSize = GetMinimalDataSize(nMaxPatternLength);
-	unsigned int dwErrorsSize = GetMinimalDataSize(nMaxErrorsCount);
-	unsigned int dwOutputCellSize = dwPatternIdxSize + dwStepBackSize + dwErrorsSize + dwOutputIndexSize;
 
-	size.dwOutputTableSize = m_outputs.count() * dwOutputCellSize;
-	size.dwTotalSize = size.dwFsmTableSize + size.dwOutputTableSize + sizeof(TSearchFsm::STable);
-
-	return size;
+	m_nMaxPatternLength = nMaxPatternLength;
+	m_nMaxErrorsCount = nMaxErrorsCount;
 }
 
-unsigned int CFsmTest::GetMinimalDataSize(unsigned int nMaxValue) {
-	if (nMaxValue <= 0xff) { // single-byte integer is enough
-		return 1;
-	} else if (nMaxValue <= 0xffff) { // two-byte integer is enough
-		return 2;
-	} else if (nMaxValue <= 0xffffffff){ // four-byte integer is enough
-		return 4;
-	} else {
-		return 8;
-	}
-}
-
-// private
 // pseudo-random related members
 unsigned int CFsmTest::NextRandomEntity() {
 	// constants for LCG (stated to be good ones)
@@ -209,7 +218,7 @@ unsigned char CFsmTest::RandomByte() {
 	return NextRandom15Bits();
 }
 
-void CFsmTest::ResetLCG() {
+void CFsmTest::ResetLcg() {
 	m_dwRandomSeed = 0;
 }
 

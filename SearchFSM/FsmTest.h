@@ -37,16 +37,19 @@ public: // table size quering methods
 	unsigned int GetOutputElementsCount() const {return m_outputs.count();}
 	STableSize GetTableSize() const;
 	STableSize GetMinimalTableSize() const; // using the shortest integral types
+
+private:
 	static unsigned int GetMinimalDataSize(unsigned int nMaxValue);
 
 private:
 	void DumpFinding(int nBitsProcessed, const TSearchFsm::SOutput &out);
+	void AnalysePatterns();
 
 private: // pseudo-random related members
 	unsigned int NextRandomEntity();
 	unsigned int NextRandom15Bits();
 	unsigned char RandomByte();
-	void ResetLCG();
+	void ResetLcg();
 
 private: // output table handling
 	static TOutputIdx StoreOutputList(const CFsmCreator::TOutputList &outputList, /* in-out */ TOutputTable *pOutputTable);
@@ -55,6 +58,8 @@ private: // output table handling
 
 private:
 	TPatterns m_patterns;
+	int m_nMaxPatternLength;
+	int m_nMaxErrorsCount;
 	TSearchFsm *m_pFsm;
 
 	// members for storing and releasing the tables

@@ -137,3 +137,7 @@ FSM memory requirements, plans, refactoring
 Added #line directive to make __FILE__omit the path
 Добавил во все файлы исходного кода директиву #line с имененм файла чтобы исключить путь к файлу
 из переменной __FILE__.
+
+26.01.2017
+Refactoting CFsmTest
+Переменил порядок членов в классе CFsmTest, выделил анализ шаблонов в отдельный метод.
