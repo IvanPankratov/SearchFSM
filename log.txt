@@ -158,3 +158,6 @@ Bit FSM testing with shift registers
 01.02.2017
 CWinTimer class for time measurement
 Добавил класс CWinTimer для измерения времени работы алгоритмов.
+-
+FSM and register rate measurement
+Добавил измерение скорости работы автомата и регистрового поиска.

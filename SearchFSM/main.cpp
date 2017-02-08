@@ -7,7 +7,7 @@
 #include "FsmTest.h"
 
 const int g_nTraceBits = 70;
-const int g_nTestCorrectnessBits = 8 * 1024 * 1024; // 1 MiB
+const int g_nTestCorrectnessBits = 8 * 1024 * 1024 * 255; // 256 MiB
 const int g_nTestSpeedBytes = 100 * 1024 * 1024; // 100 MiB
 
 void Print(const QString &s) {
@@ -110,6 +110,12 @@ int main(int argc, char *argv[]) {
 	bool fOk = tester.TestCorrectness(g_nTestCorrectnessBits, &dwHits);
 	printf("%s\n", fOk? "OK" : "FAIL");
 	Print(QString("Tested on %1 data, found %2 entries\n").arg(DataSizeToString(g_nTestCorrectnessBits / BITS_IN_BYTE)).arg(dwHits));
+
+	puts("\nSpeed tests:");
+	long double dRate = tester.TestFsmRate(g_nTestSpeedBytes, &dwHits);
+	printf("FSM speed: %g B/s (found %i entries)\n", dRate, dwHits);
+	dRate = tester.TestRegisterRate(g_nTestSpeedBytes, &dwHits);
+	printf("Register speed: %g B/s (found %i entries)\n", dRate, dwHits);
 
 	return 0;
 }
