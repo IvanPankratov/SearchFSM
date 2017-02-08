@@ -24,6 +24,7 @@ public:
 public:
 	bool CreateFsm(const TPatterns &patterns, bool fVerbose = false);
 	bool TraceFsm(int nDataLength);
+	bool TestCorrectness(unsigned int dwTestBitsCount, /* out, optional */ unsigned int *pdwHits = NULL);
 	void ReleaseFsm();
 
 public: // table size quering methods

@@ -17,10 +17,12 @@ TEMPLATE = app
 
 SOURCES += main.cpp \
 	FsmCreator.cpp \
-	FsmTest.cpp
+	FsmTest.cpp \
+	ShiftRegister.cpp
 
 HEADERS += \
-	FsmCreator.h \
+	Common.h \
 	SearchFsm.h \
+	FsmCreator.h \
 	FsmTest.h \
-	Common.h
+	ShiftRegister.h

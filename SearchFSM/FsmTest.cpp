@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "FsmTest.h"
+#include "ShiftRegister.h"
 
 class CLcg { // linear congruent generator
 public:
@@ -134,6 +135,65 @@ bool CFsmTest::TraceFsm(int nDataLength) {
 	}
 
 	return true;
+}
+
+bool CFsmTest::TestCorrectness(unsigned int dwTestBitsCount, unsigned int *pdwHits) {
+	// prepare shift register and test patterns
+	CShiftRegister testRegister(m_nMaxPatternLength);
+	QList<CShiftRegister::SPattern> registerPatterns;
+	int idx;
+	for (idx = 0; idx < m_patterns.count(); idx++) {
+		registerPatterns.append(testRegister.ConvertPattern(m_patterns[idx]));
+	}
+
+	// start test
+	m_pFsm->Reset();
+	CLcg lcg;
+
+	bool fCorrect = true;
+	unsigned int dwBit = 0;
+	unsigned int cHits = 0;
+	while (dwBit < dwTestBitsCount) {
+		unsigned char bData = lcg.RandomByte();
+		int nBit;
+		for (nBit = 0; nBit < BITS_IN_BYTE && dwBit < dwTestBitsCount; nBit++) {
+			// obtain next bit
+			unsigned char bBit = GetHiBit(bData, nBit);
+			dwBit++;
+
+			// process bit by FSM
+			QVector<int> nsPatternErrors;
+			nsPatternErrors.fill(m_nMaxErrorsCount + 1, m_patterns.count());
+			unsigned int dwOut = m_pFsm->PushBit(bBit);
+			while (dwOut != TSearchFsm::sm_outputNull) {
+				cHits++;
+				const TSearchFsm::SOutput &out = m_pFsm->GetOutput(dwOut);
+				nsPatternErrors[out.patternIdx] = out.errorsCount;
+				dwOut = out.idxNextOutput;
+			}
+
+			// check FSM's output with the test register
+			testRegister.PushBit(bBit);
+			for (idx = 0; idx <registerPatterns.count(); idx++) {
+				int nErrorsReg = testRegister.TestPattern(registerPatterns[idx]);
+				int nErrorsFsm = nsPatternErrors[idx];
+				int nMaxErrors = m_patterns[idx].nMaxErrors;
+				if ((nErrorsReg <= nMaxErrors || nErrorsFsm <= nMaxErrors) && dwBit >= (unsigned int)m_patterns[idx].nLength) {
+					if (nErrorsFsm != nErrorsReg) {
+						unsigned int dwPosition = dwBit - m_patterns[idx].nLength;
+						printf("FAIL! At %i, pattern #%i, FSM = %i errors, register = %i errors)\n", dwPosition, idx, nErrorsFsm, nErrorsReg);
+						fCorrect = false;
+					}
+				}
+			}
+		}
+
+	}
+
+	if (pdwHits != NULL) {
+		*pdwHits = cHits;
+	}
+	return fCorrect;
 }
 
 void CFsmTest::ReleaseFsm() {

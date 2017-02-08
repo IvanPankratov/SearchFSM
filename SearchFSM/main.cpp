@@ -6,6 +6,10 @@
 #include "FsmCreator.h"
 #include "FsmTest.h"
 
+const int g_nTraceBits = 70;
+const int g_nTestCorrectnessBits = 8 * 1024 * 1024; // 1 MiB
+const int g_nTestSpeedBytes = 100 * 1024 * 1024; // 100 MiB
+
 void Print(const QString &s) {
 	printf("%s", s.toLocal8Bit().constData());
 }
@@ -33,7 +37,7 @@ QString DoubleToString(double dValue, int nPrecision) {
 	return QString::number(dValue, 'f', nPrecision);
 }
 
-QString FileSizeToString(unsigned int dwSize) {
+QString DataSizeToString(unsigned int dwSize) {
 	const unsigned int g_dwKibi = 1024;
 	const unsigned int g_dwMebi = g_dwKibi * g_dwKibi;
 	const int g_nPrecision = 3;
@@ -51,9 +55,9 @@ QString FileSizeToString(unsigned int dwSize) {
 }
 
 void PrintTableSize(const CFsmTest::STableSize &size) {
-	Print(QString("FSM table: %1\n").arg(FileSizeToString(size.dwFsmTableSize)));
-	Print(QString("Output table: %1\n").arg(FileSizeToString(size.dwOutputTableSize)));
-	Print(QString("Total size: %1\n").arg(FileSizeToString(size.dwTotalSize)));
+	Print(QString("FSM table: %1\n").arg(DataSizeToString(size.dwFsmTableSize)));
+	Print(QString("Output table: %1\n").arg(DataSizeToString(size.dwOutputTableSize)));
+	Print(QString("Total size: %1\n").arg(DataSizeToString(size.dwTotalSize)));
 }
 
 void PrintFsmStats(const CFsmTest &fsm) {
@@ -100,7 +104,12 @@ int main(int argc, char *argv[]) {
 	PrintFsmStats(tester);
 
 	printf("\nTracing the FSM:\n");
-	tester.TraceFsm(70);
+	tester.TraceFsm(g_nTraceBits);
+	printf("\nTesting FSM correctness... ");
+	unsigned int dwHits;
+	bool fOk = tester.TestCorrectness(g_nTestCorrectnessBits, &dwHits);
+	printf("%s\n", fOk? "OK" : "FAIL");
+	Print(QString("Tested on %1 data, found %2 entries\n").arg(DataSizeToString(g_nTestCorrectnessBits / BITS_IN_BYTE)).arg(dwHits));
 
 	return 0;
 }
