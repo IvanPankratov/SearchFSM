@@ -154,3 +154,7 @@ Refactoring: Common.h
 Bit FSM testing with shift registers
 Написал проверку корректности работы битового поискового автомата при помощи регистра сдвига, в
 который загоняются случайные данные.
+
+01.02.2017
+CWinTimer class for time measurement
+Добавил класс CWinTimer для измерения времени работы алгоритмов.
