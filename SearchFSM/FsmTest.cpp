@@ -5,7 +5,7 @@
 #include "FsmTest.h"
 #include "ShiftRegister.h"
 
-class CLcg { // linear congruent generator
+class CLcg { // linear congruent generator (RandomByte produces period 256 MiB)
 public:
 	CLcg() {
 		Reset();
@@ -30,16 +30,49 @@ public:
 	}
 
 	unsigned char RandomByte() {
-		// take only 8 bits
-		return NextRandom15Bits();
+		// construct 8 bits-value from 15 bits
+		unsigned int dwValue = NextRandom15Bits();
+		return (dwValue & 0xff) + (dwValue >> 8);
 	}
 
-	void Reset() {
-		m_dwSeed = 0;
+	void Reset(unsigned int dwSeed = 0) {
+		m_dwSeed = dwSeed;
+	}
+
+	unsigned int GetSeed() const {
+		return m_dwSeed;
 	}
 
 private:
 	unsigned int m_dwSeed; // pseudo-random sequence entity
+};
+
+class CDoubleLcg {
+public:
+	CDoubleLcg() {
+		Reset();
+	}
+
+public:
+	unsigned char RandomByte() {
+		unsigned char bValue = m_lcg1.RandomByte() ^ m_bLcg2Value;
+		unsigned int dwSeed28Bits = m_lcg1.GetSeed() & 0x0fffffff;
+		if (dwSeed28Bits == 0) { // LCG-1 made a full cycle
+			puts("update LCG-2");
+			m_bLcg2Value = m_lcg2.RandomByte();
+		}
+		return bValue;
+	}
+
+	void Reset() {
+		m_lcg1.Reset();
+		m_lcg2.Reset();
+		m_bLcg2Value = 0;
+	}
+
+private:
+	CLcg m_lcg1, m_lcg2;
+	unsigned char m_bLcg2Value;
 };
 
 CFsmTest::CFsmTest() {
@@ -109,7 +142,7 @@ bool CFsmTest::TraceFsm(int nDataLength) {
 	}
 
 	m_pFsm->Reset();
-	CLcg lcg;
+	CDoubleLcg lcg;
 
 	unsigned char bData;
 	int idx;
@@ -137,7 +170,7 @@ bool CFsmTest::TraceFsm(int nDataLength) {
 	return true;
 }
 
-bool CFsmTest::TestCorrectness(unsigned int dwTestBitsCount, unsigned int *pdwHits) {
+bool CFsmTest::TestCorrectness(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
 	// prepare shift register and test patterns
 	CShiftRegister testRegister(m_nMaxPatternLength);
 	QList<CShiftRegister::SPattern> registerPatterns;
@@ -148,18 +181,21 @@ bool CFsmTest::TestCorrectness(unsigned int dwTestBitsCount, unsigned int *pdwHi
 
 	// start test
 	m_pFsm->Reset();
-	CLcg lcg;
+	CDoubleLcg lcg;
 
 	bool fCorrect = true;
-	unsigned int dwBit = 0;
+	unsigned int cBit = 0;
 	unsigned int cHits = 0;
-	while (dwBit < dwTestBitsCount) {
+	const unsigned int nPrintHits = 10;
+	unsigned int cPrinted = 0;
+	unsigned int dwByte;
+	for (dwByte = 0; dwByte < dwTestBytesCount; dwByte++) {
 		unsigned char bData = lcg.RandomByte();
 		int nBit;
-		for (nBit = 0; nBit < BITS_IN_BYTE && dwBit < dwTestBitsCount; nBit++) {
+		for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {
 			// obtain next bit
 			unsigned char bBit = GetHiBit(bData, nBit);
-			dwBit++;
+			cBit++;
 
 			// process bit by FSM
 			QVector<int> nsPatternErrors;
@@ -170,6 +206,11 @@ bool CFsmTest::TestCorrectness(unsigned int dwTestBitsCount, unsigned int *pdwHi
 				const TSearchFsm::SOutput &out = m_pFsm->GetOutput(dwOut);
 				nsPatternErrors[out.patternIdx] = out.errorsCount;
 				dwOut = out.idxNextOutput;
+				if (cPrinted < nPrintHits) {
+					unsigned int dwPosition = cBit - out.stepBack;
+					printf("Found #%i at %i with %i errors\n", out.patternIdx, dwPosition, out.errorsCount);
+					cPrinted++;
+				}
 			}
 
 			// check FSM's output with the test register
@@ -178,9 +219,9 @@ bool CFsmTest::TestCorrectness(unsigned int dwTestBitsCount, unsigned int *pdwHi
 				int nErrorsReg = testRegister.TestPattern(registerPatterns[idx]);
 				int nErrorsFsm = nsPatternErrors[idx];
 				int nMaxErrors = m_patterns[idx].nMaxErrors;
-				if ((nErrorsReg <= nMaxErrors || nErrorsFsm <= nMaxErrors) && dwBit >= (unsigned int)m_patterns[idx].nLength) {
+				if ((nErrorsReg <= nMaxErrors || nErrorsFsm <= nMaxErrors) && cBit >= (unsigned int)m_patterns[idx].nLength) {
 					if (nErrorsFsm != nErrorsReg) {
-						unsigned int dwPosition = dwBit - m_patterns[idx].nLength;
+						unsigned int dwPosition = cBit - m_patterns[idx].nLength;
 						printf("FAIL! At %i, pattern #%i, FSM = %i errors, register = %i errors)\n", dwPosition, idx, nErrorsFsm, nErrorsReg);
 						fCorrect = false;
 					}
