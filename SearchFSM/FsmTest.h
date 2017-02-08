@@ -45,12 +45,6 @@ private:
 	void DumpFinding(int nBitsProcessed, const TSearchFsm::SOutput &out);
 	void AnalysePatterns();
 
-private: // pseudo-random related members
-	unsigned int NextRandomEntity();
-	unsigned int NextRandom15Bits();
-	unsigned char RandomByte();
-	void ResetLcg();
-
 private: // output table handling
 	static TOutputIdx StoreOutputList(const CFsmCreator::TOutputList &outputList, /* in-out */ TOutputTable *pOutputTable);
 	static TOutputIdx StoreOutput(const TSearchFsm::SOutput &output, /* in-out */ TOutputTable *pOutputTable);
@@ -65,9 +59,6 @@ private:
 	// members for storing and releasing the tables
 	const TFsmTable m_rows;
 	const TOutputTable m_outputs;
-
-	// random related data
-	unsigned int m_dwRandomSeed; // pseudo-random sequence entity
 };
 
 #endif // FSMTEST_H

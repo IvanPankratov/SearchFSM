@@ -141,3 +141,6 @@ Added #line directive to make __FILE__omit the path
 26.01.2017
 Refactoting CFsmTest
 Переменил порядок членов в классе CFsmTest, выделил анализ шаблонов в отдельный метод.
+-
+Refactoring CFsmTest: extracting LCG
+Выделил линейный-конгруэнтный генератор в отдельный класс CLcg.

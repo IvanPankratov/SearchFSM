@@ -4,11 +4,47 @@
 
 #include "FsmTest.h"
 
+class CLcg { // linear congruent generator
+public:
+	CLcg() {
+		Reset();
+	}
+
+public:
+	unsigned int NextRandomEntity() {
+		// constants for LCG (stated to be good ones)
+		const unsigned int s_dwLcgConstA = 214013;
+		const unsigned int s_dwLcgConstC = 2531011;
+
+		// switch to the next member
+		m_dwSeed = s_dwLcgConstA * m_dwSeed + s_dwLcgConstC;
+		return m_dwSeed;
+	}
+
+	unsigned int NextRandom15Bits() {
+		const unsigned int s_dw15BitsMask = 0x00001fff;
+
+		// take bits 15-29 which are said to be the best distributed
+		return (NextRandomEntity() >> 15) & s_dw15BitsMask;
+	}
+
+	unsigned char RandomByte() {
+		// take only 8 bits
+		return NextRandom15Bits();
+	}
+
+	void Reset() {
+		m_dwSeed = 0;
+	}
+
+private:
+	unsigned int m_dwSeed; // pseudo-random sequence entity
+};
+
 CFsmTest::CFsmTest() {
 	m_nMaxPatternLength = 0;
 	m_nMaxErrorsCount = 0;
 	m_pFsm = NULL;
-	ResetLcg();
 }
 
 CFsmTest::~CFsmTest() {
@@ -72,7 +108,7 @@ bool CFsmTest::TraceFsm(int nDataLength) {
 	}
 
 	m_pFsm->Reset();
-	ResetLcg();
+	CLcg lcg;
 
 	unsigned char bData;
 	int idx;
@@ -80,7 +116,7 @@ bool CFsmTest::TraceFsm(int nDataLength) {
 		int nState = m_pFsm->GetState();
 		int nBit = idx % 8;
 		if (nBit == 0) { // new byte begins => update bData
-			bData = RandomByte();
+			bData = lcg.RandomByte();
 //			printf("0x%02x ", bData); // debug dumping
 		}
 		unsigned char bBit = GetHiBit(bData, nBit);
@@ -193,33 +229,6 @@ void CFsmTest::AnalysePatterns() {
 
 	m_nMaxPatternLength = nMaxPatternLength;
 	m_nMaxErrorsCount = nMaxErrorsCount;
-}
-
-// pseudo-random related members
-unsigned int CFsmTest::NextRandomEntity() {
-	// constants for LCG (stated to be good ones)
-	const unsigned int s_dwLcgConstA = 214013;
-	const unsigned int s_dwLcgConstC = 2531011;
-
-	// switch to the next member
-	m_dwRandomSeed = s_dwLcgConstA * m_dwRandomSeed + s_dwLcgConstC;
-	return m_dwRandomSeed;
-}
-
-unsigned int CFsmTest::NextRandom15Bits() {
-	const unsigned int s_dw15BitsMask = 0x00001fff;
-
-	// take bits 15-29 which are said to be the best distributed
-	return (NextRandomEntity() >> 15) & s_dw15BitsMask;
-}
-
-unsigned char CFsmTest::RandomByte() {
-	// take only 8 bits
-	return NextRandom15Bits();
-}
-
-void CFsmTest::ResetLcg() {
-	m_dwRandomSeed = 0;
 }
 
 // output table handling
