@@ -145,7 +145,7 @@ bool CFsmTest::TraceFsm(int nDataLength) {
 	m_pFsm->Reset();
 	CDoubleLcg lcg;
 
-	unsigned char bData;
+	unsigned char bData = 0;
 	int idx;
 	for (idx = 0; idx < nDataLength; idx++) {
 		int nState = m_pFsm->GetState();

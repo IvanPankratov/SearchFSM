@@ -223,3 +223,7 @@ Fix pack: #line directive, label to stderr, etc
 CFsmCreator refactoring: avoid redundant scope operator, etc.
 Удалил избыточные операторы пространства имён (CFsmCreator::) в методах класса.
 Провёл рефакторинг переписанного в спешке метода CFsmCreator::AreEqual.
+-
+MinGW warning removed: possible use of uninitialized variable
+Понял, наконец, в чём проблема была у компилятора MinGW, который выдавал предупреждение.
+Просто он не на ту строчку указывал :)
