@@ -8,6 +8,7 @@
 
 const int g_nTraceBits = 70;
 const int g_nTestCorrectnessBytes = 1024 * 1024 * 1024; // 1024 MiB
+const int g_nFastTestCorrectnessBytes = 1024 * 1024; // 1 MiB
 const int g_nTestSpeedBytes = 100 * 1024 * 1024; // 100 MiB
 
 void Print(const QString &s) {
@@ -75,35 +76,48 @@ void PrintFsmStats(const CFsmTest &fsm) {
 
 }
 
-void TestSpeed(const TPatterns patterns, bool fRecursive = false) {
+struct STestResult {
+	int nFsmStates;
+	unsigned int dwTableSize;
+	unsigned int dwMinTableSize;
+	double dFsmRate;
+	double dRegisterRate;
+};
+
+STestResult TestSpeed(const TPatterns patterns) {
 	const unsigned int g_dwMebi = 1024 * 1024;
 
 	puts("--------------------");
 
 	CFsmTest tester;
 	printf("\nSearch FSM for patterns:\n");
+	printf("Creating FSM...\r");
 	PrintPatterns(patterns);
 	tester.CreateFsm(patterns);
 	PrintFsmStats(tester);
 
+	printf("\nTest correctness...");
 	unsigned int dwHits;
-	bool fOk = tester.TestCorrectness(g_nTestCorrectnessBytes, 0, &dwHits);
+	bool fOk = tester.TestCorrectness(g_nFastTestCorrectnessBytes, 0, &dwHits);
 	puts(fOk? "OK" : "FAIL");
-	Print(QString("Tested on %1 data, found %2 entries\n").arg(DataSizeToString(g_nTestCorrectnessBytes)).arg(dwHits));
+	Print(QString("Tested on %1 data, found %2 entries\n").arg(DataSizeToString(g_nFastTestCorrectnessBytes)).arg(dwHits));
 
 	puts("\nSpeed tests:");
-	long double dRate = tester.TestFsmRate(g_nTestSpeedBytes, &dwHits);
-	printf("FSM speed: %g MiB/s (found %i entries)\n", dRate / g_dwMebi, dwHits);
-	dRate = tester.TestRegisterRate(g_nTestSpeedBytes, &dwHits);
-	printf("Register speed: %g MiB/s (found %i entries)\n", dRate / g_dwMebi, dwHits);
+	long double dFsmRate = tester.TestFsmRate(g_nTestSpeedBytes, &dwHits);
+	printf("FSM speed: %g MiB/s (found %i entries)\n", dFsmRate / g_dwMebi, dwHits);
+	long double dRegisterRate = tester.TestRegisterRate(g_nTestSpeedBytes, &dwHits);
+	printf("Register speed: %g MiB/s (found %i entries)\n", dRegisterRate / g_dwMebi, dwHits);
 
-	if (fRecursive) {
-		TPatterns patsReduced = patterns;
-		if (patsReduced.count() > 1) {
-			patsReduced.removeLast();
-			TestSpeed(patsReduced, fRecursive);
-		}
-	}
+	STestResult result;
+	result.nFsmStates = tester.GetStatesCount();
+	CFsmTest::STableSize size = tester.GetTableSize();
+	result.dwTableSize = size.dwTotalSize;
+	size = tester.GetMinimalTableSize();
+	result.dwMinTableSize = size.dwTotalSize;
+	result.dFsmRate = dFsmRate;
+	result.dRegisterRate = dRegisterRate;
+
+	return result;
 }
 
 SPattern::TData GenarateData(int nBytes) {
@@ -132,24 +146,105 @@ SPattern GeneratePattern(int nLength, int nErrors, bool fMasked = false) {
 	return pat;
 }
 
-void TestOnPatterns(int nCount, int nLength, int nErrors = 0, bool fMasked = false) {
+struct STest {
+	int nPatternsLength;
+	int nPatternsCount;
+	int nErrorsCount;
+	bool fMasked;
+	STestResult result;
+};
+typedef QList<STest> TTestList;
+
+TTestList TestOnPatterns(int nMaxCount, int nLength, int nErrors = 0, bool fMasked = false) {
+	TTestList testList;
 	TPatterns patterns;
 	int idx;
-	for (idx = 0; idx < nCount; idx++) {
+	for (idx = 0; idx < nMaxCount; idx++) {
 		patterns << GeneratePattern(nLength, nErrors, fMasked);
+		STest test;
+		test.nPatternsCount = idx;
+		test.nPatternsLength = nLength;
+		test.nErrorsCount = nErrors;
+		test.fMasked = fMasked;
+		test.result = TestSpeed(patterns);
+
+		testList << test;
 	}
 
-	TestSpeed(patterns, true);
+	return testList;
+}
+
+void DumpTestList(const TTestList &list) {
+	const unsigned int g_dwMebi = 1024 * 1024;
+
+	printf("\nlength");
+	int idx;
+	for (idx = 0; idx < list.count(); idx++) {
+		printf("\t%i", list[idx].nPatternsLength);
+	}
+
+	printf("\ncount");
+	for (idx = 0; idx < list.count(); idx++) {
+		printf("\t%i", list[idx].nPatternsCount);
+	}
+
+	printf("\nerrors");
+	for (idx = 0; idx < list.count(); idx++) {
+		printf("\t%i", list[idx].nErrorsCount);
+	}
+
+	printf("\nmasked");
+	for (idx = 0; idx < list.count(); idx++) {
+		printf("\t%s", list[idx].fMasked? "true" : "false");
+	}
+
+	printf("\nstates");
+	for (idx = 0; idx < list.count(); idx++) {
+		printf("\t%i", list[idx].result.nFsmStates);
+	}
+
+	printf("\ntable");
+	for (idx = 0; idx < list.count(); idx++) {
+		Print(QString("\t%1").arg(DataSizeToString(list[idx].result.dwTableSize)));
+	}
+
+	printf("\nmin-table");
+	for (idx = 0; idx < list.count(); idx++) {
+		Print(QString("\t%1").arg(DataSizeToString(list[idx].result.dwMinTableSize)));
+	}
+
+	printf("\nFSM rate");
+	for (idx = 0; idx < list.count(); idx++) {
+		printf("\t%g", list[idx].result.dFsmRate / g_dwMebi);
+	}
+
+
+	printf("\nReg rate");
+	for (idx = 0; idx < list.count(); idx++) {
+		printf("\t%g", list[idx].result.dRegisterRate / g_dwMebi);
+	}
+
+	printf("\n\n");
 }
 
 int main(int argc, char *argv[]) {
 	QCoreApplication a(argc, argv);
 
-	TestOnPatterns(6, 8);
-	TestOnPatterns(6, 28);
-	TestOnPatterns(6, 32);
-	TestOnPatterns(6, 48);
-	TestOnPatterns(6, 65);
+	int nErrors = 0;
+	bool fMasked = false;
+	TTestList testList8 = TestOnPatterns(6, 8, nErrors, fMasked);
+	TTestList testList28 = TestOnPatterns(6, 28, nErrors, fMasked);
+	TTestList testList32 = TestOnPatterns(6, 32, nErrors, fMasked);
+	TTestList testList48 = TestOnPatterns(6, 48, nErrors, fMasked);
+	TTestList testList65 = TestOnPatterns(6, 65, nErrors, fMasked);
+	TTestList testList165 = TestOnPatterns(6, 165, nErrors, fMasked);
+
+	DumpTestList(testList8);
+	DumpTestList(testList28);
+	DumpTestList(testList32);
+	DumpTestList(testList48);
+	DumpTestList(testList65);
+	DumpTestList(testList165);
 
 	return 0;
 
@@ -172,7 +267,7 @@ int main(int argc, char *argv[]) {
 	TPatterns patterns;
 	patterns << pat1 << pat2;// << patTwoParts;
 
-	TestSpeed(patterns, true);
+	TestSpeed(patterns);
 
 	CFsmTest tester;
 	printf("\nSearch FSM for patterns:\n");
