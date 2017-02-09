@@ -94,6 +94,10 @@ STestResult TestSpeed(const TPatterns patterns) {
 	PrintPatterns(patterns);
 	tester.CreateFsm(patterns);
 	PrintFsmStats(tester);
+	unsigned int dwCollisions = tester.GetCollisionsCount();
+	if (dwCollisions > 0) {
+		printf("FSM state hashes have %i collisions\n", dwCollisions);
+	}
 
 	printf("\nTest correctness...");
 	unsigned int dwHits;
@@ -237,13 +241,17 @@ void DumpTestList(const TTestList &list) {
 	printf("\n\n");
 }
 
-void BunchTest(int nErrors, bool fMasked, int nReduction = 0) {
+void BunchTest(int nErrors, bool fMasked, int nReduction = 0, int nSubReduction = 0) {
 	QList<int> LengthsList;
 	LengthsList << 8 << 28 << 32 << 48 << 65 << 165;
 	int idx;
 	for (idx = 0; idx < LengthsList.count() - nReduction; idx++) {
 		int nLength = LengthsList[idx];
-		TTestList testList = TestOnPatterns(6, nLength, nErrors, fMasked);
+		int nPatternsCount = 6;
+		if (idx == LengthsList.count() - nReduction - 1) {
+			nPatternsCount -= nSubReduction;
+		}
+		TTestList testList = TestOnPatterns(nPatternsCount, nLength, nErrors, fMasked);
 		DumpTestList(testList);
 	}
 }
@@ -252,57 +260,17 @@ int main(int argc, char *argv[]) {
 	QCoreApplication a(argc, argv);
 
 	BunchTest(0, false);
-	BunchTest(0, true);
 	BunchTest(1, false);
-	BunchTest(1, true);
 	BunchTest(2, false);
-	BunchTest(2, true, 1);
-	BunchTest(3, false, 1);
-	BunchTest(3, true, 2);
-	BunchTest(4, false, 2);
-
-	return 0;
-
-	SPattern pat1;
-	pat1.data << 0x1e;
-	pat1.nLength = 5;
-	pat1.nMaxErrors = 2;
-
-	SPattern pat2;
-	pat2.data << 0xaa;
-	pat2.nLength = 8;
-	pat2.nMaxErrors = 2;
-
-	SPattern patTwoParts; // 1011----1101
-	patTwoParts.data << 0xb0 << 0x0d;
-	patTwoParts.mask << 0xf0 << 0x0f;
-	patTwoParts.nLength = 12;
-	patTwoParts.nMaxErrors = 1;
-
-	TPatterns patterns;
-	patterns << pat1 << pat2;// << patTwoParts;
-
-	TestSpeed(patterns);
-
-	CFsmTest tester;
-	printf("\nSearch FSM for patterns:\n");
-	PrintPatterns(patterns);
-	tester.CreateFsm(patterns);
-	PrintFsmStats(tester);
-
-	printf("\nTracing the FSM:\n");
-	tester.TraceFsm(g_nTraceBits);
-	printf("\nTesting FSM correctness... ");
-	unsigned int dwHits;
-	bool fOk = tester.TestCorrectness(g_nTestCorrectnessBytes, 25, &dwHits);
-	printf("%s\n", fOk? "OK" : "FAIL");
-	Print(QString("Tested on %1 data, found %2 entries\n").arg(DataSizeToString(g_nTestCorrectnessBytes)).arg(dwHits));
-
-	puts("\nSpeed tests:");
-	long double dRate = tester.TestFsmRate(g_nTestSpeedBytes, &dwHits);
-	printf("FSM speed: %Lg B/s (found %i entries)\n", dRate, dwHits);
-	dRate = tester.TestRegisterRate(g_nTestSpeedBytes, &dwHits);
-	printf("Register speed: %Lg B/s (found %i entries)\n", dRate, dwHits);
+	BunchTest(3, false);
+	BunchTest(4, false, 0, 2);
+	BunchTest(5, false, 2, 2);
+	BunchTest(0, true);
+	BunchTest(1, true, 2, 1);
+	BunchTest(2, true, 4, 3);
+	BunchTest(3, true, 4, 5);
+	BunchTest(4, true, 5);
+	BunchTest(5, true, 5);
 
 	return 0;
 }
