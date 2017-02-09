@@ -255,3 +255,6 @@ CFsmCreator::CreateByteTable for byte SearchFSM
 точно так же.
 Метод позволяет строить байтовые автоматы для различных длин байтов и для различных порядков
 следования битов в байтах.
+-
+CSearchFsmByte - template class for byte SearchFSM
+Написал шаблонный класс CSearchFsmByte для реализации байтового поискового автомата.
