@@ -4,8 +4,9 @@
 
 #include "FsmTest.h"
 #include "ShiftRegister.h"
+#include "WinTimer.h"
 
-class CLcg { // linear congruent generator (RandomByte produces period 256 MiB)
+class CLcg { // linear congruent generator, produces period 256 MiB
 public:
 	CLcg() {
 		Reset();
@@ -235,6 +236,87 @@ bool CFsmTest::TestCorrectness(unsigned int dwTestBytesCount, unsigned int *pdwH
 		*pdwHits = cHits;
 	}
 	return fCorrect;
+}
+
+long double CFsmTest::TestFsmRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
+	m_pFsm->Reset();
+	CLcg lcg;
+
+	// start test
+	CWinTimer timer;
+	unsigned int dwBit = 0;
+	unsigned int cHits = 0;
+	unsigned int dwByteIdx;
+	for (dwByteIdx = 0; dwByteIdx < dwTestBytesCount; dwByteIdx++) {
+		unsigned char bData = lcg.RandomByte();
+		int nBit;
+		for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {
+			// obtain next bit
+			unsigned char bBit = GetHiBit(bData, nBit);
+			dwBit++;
+
+			// process bit by FSM
+			unsigned int dwOut = m_pFsm->PushBit(bBit);
+			while (dwOut != TSearchFsm::sm_outputNull) {
+				cHits++;
+				const TSearchFsm::SOutput &out = m_pFsm->GetOutput(dwOut);
+				dwOut = out.idxNextOutput;
+			}
+		}
+	}
+	timer.Stop();
+	CWinTimer::TTime tSeconds = timer.GetDuration();
+	long double dRate = dwTestBytesCount / tSeconds;
+
+	if (pdwHits != NULL) {
+		*pdwHits = cHits;
+	}
+	return dRate;
+}
+
+long double CFsmTest::TestRegisterRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
+	// prepare shift register and test patterns
+	CShiftRegister testRegister(m_nMaxPatternLength);
+	QList<CShiftRegister::SPattern> registerPatterns;
+	int idx;
+	for (idx = 0; idx < m_patterns.count(); idx++) {
+		registerPatterns.append(testRegister.ConvertPattern(m_patterns[idx]));
+	}
+	CLcg lcg;
+
+	// start test
+	CWinTimer timer;
+	unsigned int dwBit = 0;
+	unsigned int cHits = 0;
+	unsigned int dwByteIdx;
+	for (dwByteIdx = 0; dwByteIdx < dwTestBytesCount; dwByteIdx++) {
+		unsigned char bData = lcg.RandomByte();
+		int nBit;
+		for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {
+			// obtain next bit
+			unsigned char bBit = GetHiBit(bData, nBit);
+			dwBit++;
+
+			// process bit with the register
+			testRegister.PushBit(bBit);
+			for (idx = 0; idx <registerPatterns.count(); idx++) {
+				int nErrorsReg = testRegister.TestPattern(registerPatterns[idx]);
+				int nMaxErrors = m_patterns[idx].nMaxErrors;
+				unsigned int dwPatternLength = m_patterns[idx].nLength;
+				if (nErrorsReg <= nMaxErrors && dwBit >= dwPatternLength) {
+					cHits++;
+				}
+			}
+		}
+	}
+	timer.Stop();
+	CWinTimer::TTime tSeconds = timer.GetDuration();
+	long double dRate = dwTestBytesCount / tSeconds;
+
+	if (pdwHits != NULL) {
+		*pdwHits = cHits;
+	}
+	return dRate;
 }
 
 void CFsmTest::ReleaseFsm() {

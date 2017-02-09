@@ -75,8 +75,83 @@ void PrintFsmStats(const CFsmTest &fsm) {
 
 }
 
+void TestSpeed(const TPatterns patterns, bool fRecursive = false) {
+	const unsigned int g_dwMebi = 1024 * 1024;
+
+	puts("--------------------");
+
+	CFsmTest tester;
+	printf("\nSearch FSM for patterns:\n");
+	PrintPatterns(patterns);
+	tester.CreateFsm(patterns);
+	PrintFsmStats(tester);
+
+	unsigned int dwHits;
+	bool fOk = tester.TestCorrectness(g_nTestCorrectnessBytes, &dwHits);
+	puts(fOk? "OK" : "FAIL");
+	Print(QString("Tested on %1 data, found %2 entries\n").arg(DataSizeToString(g_nTestCorrectnessBytes)).arg(dwHits));
+
+	puts("\nSpeed tests:");
+	long double dRate = tester.TestFsmRate(g_nTestSpeedBytes, &dwHits);
+	printf("FSM speed: %g MiB/s (found %i entries)\n", dRate / g_dwMebi, dwHits);
+	dRate = tester.TestRegisterRate(g_nTestSpeedBytes, &dwHits);
+	printf("Register speed: %g MiB/s (found %i entries)\n", dRate / g_dwMebi, dwHits);
+
+	if (fRecursive) {
+		TPatterns patsReduced = patterns;
+		if (patsReduced.count() > 1) {
+			patsReduced.removeLast();
+			TestSpeed(patsReduced, fRecursive);
+		}
+	}
+}
+
+SPattern::TData GenarateData(int nBytes) {
+	SPattern::TData data;
+	int idx;
+	for (idx = 0; idx < nBytes; idx++) {
+		data << rand();
+	}
+
+	return data;
+}
+
+SPattern GeneratePattern(int nLength, int nErrors, bool fMasked = false) {
+	int nBytes = nLength / BITS_IN_BYTE;
+	if (nLength % BITS_IN_BYTE > 0) {
+		nBytes++;
+	}
+	SPattern pat;
+	pat.nLength = nLength;
+	pat.nMaxErrors = nErrors;
+	pat.data = GenarateData(nBytes);
+	if (fMasked) {
+		pat.mask = GenarateData(nBytes);
+	}
+
+	return pat;
+}
+
+void TestOnPatterns(int nCount, int nLength, int nErrors = 0, bool fMasked = false) {
+	TPatterns patterns;
+	int idx;
+	for (idx = 0; idx < nCount; idx++) {
+		patterns << GeneratePattern(nLength, nErrors, fMasked);
+	}
+
+	TestSpeed(patterns, true);
+}
+
 int main(int argc, char *argv[]) {
 	QCoreApplication a(argc, argv);
+
+	TestOnPatterns(6, 8);
+	TestOnPatterns(6, 28);
+	TestOnPatterns(6, 32);
+	TestOnPatterns(6, 48);
+	TestOnPatterns(6, 65);
+
+	return 0;
 
 	SPattern pat1;
 	pat1.data << 0x1e;
@@ -97,6 +172,9 @@ int main(int argc, char *argv[]) {
 	TPatterns patterns;
 	patterns << pat1 << pat2;// << patTwoParts;
 
+	TestSpeed(patterns, true);
+	return 0;
+
 	CFsmTest tester;
 	printf("\nSearch FSM for patterns:\n");
 	PrintPatterns(patterns);
@@ -110,6 +188,12 @@ int main(int argc, char *argv[]) {
 	bool fOk = tester.TestCorrectness(g_nTestCorrectnessBytes, &dwHits);
 	printf("%s\n", fOk? "OK" : "FAIL");
 	Print(QString("Tested on %1 data, found %2 entries\n").arg(DataSizeToString(g_nTestCorrectnessBytes)).arg(dwHits));
+
+	puts("\nSpeed tests:");
+	long double dRate = tester.TestFsmRate(g_nTestSpeedBytes, &dwHits);
+	printf("FSM speed: %g B/s (found %i entries)\n", dRate, dwHits);
+	dRate = tester.TestRegisterRate(g_nTestSpeedBytes, &dwHits);
+	printf("Register speed: %g B/s (found %i entries)\n", dRate, dwHits);
 
 	return 0;
 }

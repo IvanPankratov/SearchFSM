@@ -30,6 +30,8 @@ public: // working methods
 private:
 	static void PushBit(unsigned char bBit, /* in-out */ TData *pData);
 	static unsigned int Weight(TChunk vector);
+	static unsigned int WeightTable(TChunk vector);
+	static unsigned int ByteWeight(unsigned char bVector);
 
 private:
 	unsigned int m_dwLength;
