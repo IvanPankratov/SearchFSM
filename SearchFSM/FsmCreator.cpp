@@ -61,6 +61,10 @@ bool CFsmCreator::GenerateTables(bool fVerbose) {
 		}
 	}
 
+	// no needed anymore
+	m_states.clear();
+	m_idxStates.clear();
+
 	return true;
 }
 
@@ -109,7 +113,7 @@ CFsmCreator::TByteTable CFsmCreator::CreateByteTable(int nBitsAtOnce, CFsmCreato
 }
 
 int CFsmCreator::GetStatesCount() const {
-	return m_states.count();
+	return m_table.count();
 }
 
 unsigned int CFsmCreator::GetCollisionsCount() const {
