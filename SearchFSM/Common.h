@@ -14,6 +14,15 @@ inline unsigned char GetHiBit(const unsigned char bData, int nBit) {
 	return (bData >> (BITS_IN_BYTE - nBit - 1)) & 0x01;
 }
 
+inline unsigned char HiNibble(const unsigned char bData) {
+	return bData >> 4;
+}
+
+inline unsigned char LoNibble(const unsigned char bData) {
+	return bData & 0x0f;
+}
+
+
 //////////////////////////////////////////////////////////////////////////
 /// \brief The SPattern struct - struct describing searched pattern for SearchFSM
 /// Bits are stored in the arrays of bytes (unsigned char) in the \p data field like this:

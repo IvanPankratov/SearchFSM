@@ -92,7 +92,7 @@ STestResult TestSpeed(const TPatterns patterns) {
 	printf("\nSearch FSM for patterns:\n");
 	printf("Creating FSM...\r");
 	PrintPatterns(patterns);
-	tester.CreateFsm(patterns);
+	tester.CreateFsm(patterns, true, true);
 	PrintFsmStats(tester);
 	unsigned int dwCollisions = tester.GetCollisionsCount();
 	if (dwCollisions > 0) {
@@ -108,6 +108,13 @@ STestResult TestSpeed(const TPatterns patterns) {
 	Print(QString("\nSpeed tests (on %1 data):\n").arg(DataSizeToString(g_nTestSpeedBytes)));
 	long double dFsmRate = tester.TestFsmRate(g_nTestSpeedBytes, &dwHits);
 	printf("FSM speed: %Lg MiB/s (found %i entries)\n", dFsmRate / g_dwMebi, dwHits);
+
+	long double dFsmNibbleRate = tester.TestFsmNibbleRate(g_nTestSpeedBytes, &dwHits);
+	printf("Nibble SearchFSM speed: %Lg MiB/s (found %i entries)\n", dFsmNibbleRate / g_dwMebi, dwHits);
+
+	long double dFsmByteRate = tester.TestFsmByteRate(g_nTestSpeedBytes, &dwHits);
+	printf("Byte SearchFSM speed: %Lg MiB/s (found %i entries)\n", dFsmByteRate / g_dwMebi, dwHits);
+
 	long double dRegisterRate = tester.TestRegisterRate(g_nTestSpeedBytes, &dwHits);
 	printf("Register speed: %Lg MiB/s (found %i entries)\n", dRegisterRate / g_dwMebi, dwHits);
 
