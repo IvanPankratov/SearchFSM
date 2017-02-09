@@ -1,3 +1,5 @@
+#line 2 "WinTimer.h" // Make __FILE__ omit the path
+
 #ifndef WINTIMER_H
 #define WINTIMER_H
 

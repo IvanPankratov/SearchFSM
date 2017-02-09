@@ -1,6 +1,7 @@
 #line 2 "main.cpp" // Make __FILE__ omit the path
 
 #include <QCoreApplication>
+#include <QDateTime>
 
 #include "SearchFsm.h"
 #include "FsmCreator.h"
@@ -87,8 +88,6 @@ struct STestResult {
 STestResult TestSpeed(const TPatterns patterns) {
 	const unsigned int g_dwMebi = 1024 * 1024;
 
-	puts("--------------------");
-
 	CFsmTest tester;
 	printf("\nSearch FSM for patterns:\n");
 	printf("Creating FSM...\r");
@@ -102,11 +101,11 @@ STestResult TestSpeed(const TPatterns patterns) {
 	puts(fOk? "OK" : "FAIL");
 	Print(QString("Tested on %1 data, found %2 entries\n").arg(DataSizeToString(g_nFastTestCorrectnessBytes)).arg(dwHits));
 
-	puts("\nSpeed tests:");
+	Print(QString("\nSpeed tests (on %1 data):\n").arg(DataSizeToString(g_nTestSpeedBytes)));
 	long double dFsmRate = tester.TestFsmRate(g_nTestSpeedBytes, &dwHits);
-	printf("FSM speed: %g MiB/s (found %i entries)\n", dFsmRate / g_dwMebi, dwHits);
+	printf("FSM speed: %Lg MiB/s (found %i entries)\n", dFsmRate / g_dwMebi, dwHits);
 	long double dRegisterRate = tester.TestRegisterRate(g_nTestSpeedBytes, &dwHits);
-	printf("Register speed: %g MiB/s (found %i entries)\n", dRegisterRate / g_dwMebi, dwHits);
+	printf("Register speed: %Lg MiB/s (found %i entries)\n", dRegisterRate / g_dwMebi, dwHits);
 
 	STestResult result;
 	result.nFsmStates = tester.GetStatesCount();
@@ -155,6 +154,15 @@ struct STest {
 };
 typedef QList<STest> TTestList;
 
+void PrintTestLabel(const STest& test) {
+	static const QString g_sTestLabelPattern = "%1, begin test: %3 bits, %4 errors, %5 mask, %2 patterns\n";
+
+	QString sTimestamp = QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm:ss.zzz");
+	QString sTestLabel = g_sTestLabelPattern.arg(sTimestamp).arg(test.nPatternsCount).arg(test.nPatternsLength)
+			.arg(test.nErrorsCount).arg(test.fMasked? "with" : "no");
+	fputs(sTestLabel.toLocal8Bit().constData(), stderr);
+}
+
 TTestList TestOnPatterns(int nMaxCount, int nLength, int nErrors = 0, bool fMasked = false) {
 	TTestList testList;
 	TPatterns patterns;
@@ -166,6 +174,8 @@ TTestList TestOnPatterns(int nMaxCount, int nLength, int nErrors = 0, bool fMask
 		test.nPatternsLength = nLength;
 		test.nErrorsCount = nErrors;
 		test.fMasked = fMasked;
+		puts("\n--------------------");
+		PrintTestLabel(test);
 		test.result = TestSpeed(patterns);
 
 		testList << test;
@@ -290,9 +300,9 @@ int main(int argc, char *argv[]) {
 
 	puts("\nSpeed tests:");
 	long double dRate = tester.TestFsmRate(g_nTestSpeedBytes, &dwHits);
-	printf("FSM speed: %g B/s (found %i entries)\n", dRate, dwHits);
+	printf("FSM speed: %Lg B/s (found %i entries)\n", dRate, dwHits);
 	dRate = tester.TestRegisterRate(g_nTestSpeedBytes, &dwHits);
-	printf("Register speed: %g B/s (found %i entries)\n", dRate, dwHits);
+	printf("Register speed: %Lg B/s (found %i entries)\n", dRate, dwHits);
 
 	return 0;
 }
