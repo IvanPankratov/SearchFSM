@@ -25,16 +25,17 @@ CFsmCreator::CFsmCreator(const TPatterns &patterns):
 
 bool CFsmCreator::GenerateTables(bool fVerbose) {
 	m_states.clear();
-	SStateDescription state0;
+	m_idxStates.clear();
+
 	{ // create initial state - all the parts are empty
+		SStateDescription state0;
 		SStatePart emptyPart;
 		int idx, nCount = m_patterns.count();
 		for (idx = 0; idx < nCount; idx++) {
 			state0.parts << emptyPart;
 		}
+		AddState(state0);
 	}
-
-	m_states << state0;
 
 	m_table.clear();
 	int nCurrentState;
@@ -88,26 +89,31 @@ CFsmCreator::STableCell CFsmCreator::TransitState(const SStateDescription &state
 		}
 	}
 
-	// look for the same state in the list of the states
-	int nStatesCount = m_states.count();
-	int nNewStateIdx = -1;
+	STableCell cell;
+	cell.nNextState = AddState(newState);
+	cell.output = outputList;
+	return cell;
+}
+
+int CFsmCreator::AddState(const CFsmCreator::SStateDescription &state) {
+	TStateHash hash = Hash(state);
+	TIndexList list = m_idxStates[hash];
+	// look for the same state in the list of the states with the same hash
+	int idx, nStatesCount = list.count();
 	for (idx = 0; idx < nStatesCount; idx++) {
-		if (AreEqual(newState, m_states[idx])) { // found the same state
-			nNewStateIdx = idx;
-			break;
+		int nStateIdx = list[idx];
+		if (AreEqual(state, m_states[nStateIdx])) { // found the same state
+			return nStateIdx;
+		} else if (idx == nStatesCount - 1) { // no equal state in the list - hash collision
+			fputs("Collision!\n", stderr);
 		}
 	}
 
 	// the state is not found - store it
-	if (nNewStateIdx == -1) {
-		m_states.append(newState);
-		nNewStateIdx = m_states.count() - 1;
-	}
-
-	STableCell cell;
-	cell.nNextState = nNewStateIdx;
-	cell.output = outputList;
-	return cell;
+	m_states.append(state);
+	int nNewStateIdx = m_states.count() - 1;
+	m_idxStates[hash] << nNewStateIdx;
+	return nNewStateIdx;
 }
 
 CFsmCreator::SBitResultForPattern CFsmCreator::ProcessBitForPattern(const SStatePart &part, const SPattern &pattern, unsigned char bBit) {
@@ -181,6 +187,30 @@ bool CFsmCreator::AreEqual(const SStatePart &part1, const SStatePart &part2) {
 	}
 
 	return true;
+}
+
+CFsmCreator::TStateHash CFsmCreator::Hash(const SStateDescription &state) {
+	const unsigned int g_dwHashMultiplier = 3571;
+	const unsigned int g_dwHashStatePartMultiplier = 1907;
+
+	unsigned int dwHash = 0;
+	int nPart, nCount = state.parts.count();
+	for (nPart = 0; nPart < nCount; nPart++) {
+		dwHash += nPart;
+		dwHash *= g_dwHashStatePartMultiplier;
+
+		const SStatePart &part = state.parts[nPart];
+		int nPrefix, nPrefixesCount = part.prefixes.count();
+		for (nPrefix = 0; nPrefix < nPrefixesCount; nPrefix++) {
+			const SPrefix &prefix = part.prefixes[nPrefix];
+			dwHash += prefix.nLength;
+			dwHash *= g_dwHashMultiplier;
+			dwHash += prefix.nErrors;
+			dwHash *= g_dwHashMultiplier;
+		}
+	}
+
+	return dwHash;
 }
 
 void CFsmCreator::DumpState(const SStateDescription &state) {

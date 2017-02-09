@@ -4,6 +4,7 @@
 #define FSMCREATOR_H
 
 #include <QList>
+#include <QHash>
 #include <QString>
 
 #include "Common.h"
@@ -57,13 +58,18 @@ private:
 		QList<SStatePart> parts;
 	};
 
+	typedef unsigned int TStateHash;
+	typedef QList<int> TIndexList;
+
 private:
 	STableCell TransitState(const SStateDescription &state, unsigned char bBit);
+	int AddState(const SStateDescription &state);
 	static SBitResultForPattern ProcessBitForPattern(const SStatePart &part, const SPattern &pattern, unsigned char bBit);
 
 private:
 	static bool AreEqual(const SStateDescription &state1, const SStateDescription &state2);
 	static bool AreEqual(const SStatePart &part1, const SStatePart &part2);
+	static TStateHash Hash(const SStateDescription &state);
 	void DumpState(const SStateDescription &state);
 	void DumpStatePart(const SStatePart &part);
 	void DumpOutput(const TOutputList &output);
@@ -71,6 +77,7 @@ private:
 private:
 	const TPatterns m_patterns;
 	QList<SStateDescription> m_states;
+	QHash<TStateHash, TIndexList> m_idxStates; // hash -> indexes list
 	QList<STableRow> m_table;
 };
 
