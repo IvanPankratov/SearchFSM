@@ -162,7 +162,7 @@ TTestList TestOnPatterns(int nMaxCount, int nLength, int nErrors = 0, bool fMask
 	for (idx = 0; idx < nMaxCount; idx++) {
 		patterns << GeneratePattern(nLength, nErrors, fMasked);
 		STest test;
-		test.nPatternsCount = idx;
+		test.nPatternsCount = idx + 1;
 		test.nPatternsLength = nLength;
 		test.nErrorsCount = nErrors;
 		test.fMasked = fMasked;
@@ -227,24 +227,29 @@ void DumpTestList(const TTestList &list) {
 	printf("\n\n");
 }
 
+void BunchTest(int nErrors, bool fMasked, int nReduction = 0) {
+	QList<int> LengthsList;
+	LengthsList << 8 << 28 << 32 << 48 << 65 << 165;
+	int idx;
+	for (idx = 0; idx < LengthsList.count() - nReduction; idx++) {
+		int nLength = LengthsList[idx];
+		TTestList testList = TestOnPatterns(6, nLength, nErrors, fMasked);
+		DumpTestList(testList);
+	}
+}
+
 int main(int argc, char *argv[]) {
 	QCoreApplication a(argc, argv);
 
-	int nErrors = 0;
-	bool fMasked = false;
-	TTestList testList8 = TestOnPatterns(6, 8, nErrors, fMasked);
-	TTestList testList28 = TestOnPatterns(6, 28, nErrors, fMasked);
-	TTestList testList32 = TestOnPatterns(6, 32, nErrors, fMasked);
-	TTestList testList48 = TestOnPatterns(6, 48, nErrors, fMasked);
-	TTestList testList65 = TestOnPatterns(6, 65, nErrors, fMasked);
-	TTestList testList165 = TestOnPatterns(6, 165, nErrors, fMasked);
-
-	DumpTestList(testList8);
-	DumpTestList(testList28);
-	DumpTestList(testList32);
-	DumpTestList(testList48);
-	DumpTestList(testList65);
-	DumpTestList(testList165);
+	BunchTest(0, false);
+	BunchTest(0, true);
+	BunchTest(1, false);
+	BunchTest(1, true);
+	BunchTest(2, false);
+	BunchTest(2, true, 1);
+	BunchTest(3, false, 1);
+	BunchTest(3, true, 2);
+	BunchTest(4, false, 2);
 
 	return 0;
 
