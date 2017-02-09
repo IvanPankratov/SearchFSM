@@ -81,7 +81,11 @@ struct STestResult {
 	int nFsmStates;
 	unsigned int dwTableSize;
 	unsigned int dwMinTableSize;
+	unsigned int dwTableNibbleSize;
+	unsigned int dwTableByteSize;
 	double dFsmRate;
+	double dFsmNibbleRate;
+	double dFsmByteRate;
 	double dRegisterRate;
 };
 
@@ -92,7 +96,27 @@ STestResult TestSpeed(const TPatterns patterns) {
 	printf("\nSearch FSM for patterns:\n");
 	printf("Creating FSM...\r");
 	PrintPatterns(patterns);
-	tester.CreateFsm(patterns, true, true);
+	try {
+		tester.CreateFsm(patterns, true, true);
+	}
+	catch(...) {
+		try {
+			puts("Failed to create byte SearchFSM - to big tables");
+			tester.CreateFsm(patterns, true, false);
+		}
+		catch(...) {
+			puts("Failed to create even nibble SearchFSM - to big tables");
+			try {
+				tester.CreateFsm(patterns, false, false);
+			}
+			catch(...) {
+				puts("Failed to create bit SearchFSM!");
+				STestResult resultNo = {0};
+				return resultNo;
+			}
+		}
+	}
+
 	PrintFsmStats(tester);
 	unsigned int dwCollisions = tester.GetCollisionsCount();
 	if (dwCollisions > 0) {
@@ -120,11 +144,13 @@ STestResult TestSpeed(const TPatterns patterns) {
 
 	STestResult result;
 	result.nFsmStates = tester.GetStatesCount();
-	CFsmTest::STableSize size = tester.GetTableSize();
-	result.dwTableSize = size.dwTotalSize;
-	size = tester.GetMinimalTableSize();
-	result.dwMinTableSize = size.dwTotalSize;
+	result.dwTableSize = tester.GetTableSize().dwTotalSize;
+	result.dwMinTableSize = tester.GetMinimalTableSize().dwTotalSize;
+	result.dwTableNibbleSize = tester.GetNibbleTableSize().dwTotalSize;
+	result.dwTableByteSize = tester.GetByteTableSize().dwTotalSize;
 	result.dFsmRate = dFsmRate;
+	result.dFsmNibbleRate = dFsmNibbleRate;
+	result.dFsmByteRate = dFsmByteRate;
 	result.dRegisterRate = dRegisterRate;
 
 	return result;
@@ -234,11 +260,30 @@ void DumpTestList(const TTestList &list) {
 		Print(QString("\t%1").arg(DataSizeToString(list[idx].result.dwMinTableSize)));
 	}
 
-	printf("\nFSM rate");
+	printf("\nbit FSM rate");
 	for (idx = 0; idx < list.count(); idx++) {
 		printf("\t%g", list[idx].result.dFsmRate / g_dwMebi);
 	}
 
+	printf("\nnibble table");
+	for (idx = 0; idx < list.count(); idx++) {
+		Print(QString("\t%1").arg(DataSizeToString(list[idx].result.dwTableNibbleSize)));
+	}
+
+	printf("\nnibble FSM rate");
+	for (idx = 0; idx < list.count(); idx++) {
+		printf("\t%g", list[idx].result.dFsmNibbleRate / g_dwMebi);
+	}
+
+	printf("\nbyte table");
+	for (idx = 0; idx < list.count(); idx++) {
+		Print(QString("\t%1").arg(DataSizeToString(list[idx].result.dwTableByteSize)));
+	}
+
+	printf("\nbyte FSM rate");
+	for (idx = 0; idx < list.count(); idx++) {
+		printf("\t%g", list[idx].result.dFsmByteRate / g_dwMebi);
+	}
 
 	printf("\nReg rate");
 	for (idx = 0; idx < list.count(); idx++) {
@@ -270,11 +315,11 @@ int main(int argc, char *argv[]) {
 	BunchTest(1, false);
 	BunchTest(2, false);
 	BunchTest(3, false);
-	BunchTest(4, false, 0, 2);
-	BunchTest(5, false, 2, 2);
+	BunchTest(4, false, 0, 4);
+	BunchTest(5, false, 4, 1);
 	BunchTest(0, true);
-	BunchTest(1, true, 2, 1);
-	BunchTest(2, true, 4, 3);
+	BunchTest(1, true, 4, 3);
+	BunchTest(2, true, 4, 4);
 	BunchTest(3, true, 4, 5);
 	BunchTest(4, true, 5);
 	BunchTest(5, true, 5);

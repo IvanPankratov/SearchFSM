@@ -56,6 +56,8 @@ public: // table size quering methods
 	unsigned int GetOutputElementsCount() const {return m_dwFsmOutputsCount;}
 	STableSize GetTableSize() const;
 	STableSize GetMinimalTableSize() const; // using the shortest integral types
+	STableSize GetNibbleTableSize() const;
+	STableSize GetByteTableSize() const;
 
 private:
 	static unsigned int GetMinimalDataSize(unsigned int nMaxValue);

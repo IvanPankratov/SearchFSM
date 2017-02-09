@@ -352,6 +352,13 @@ long double CFsmTest::TestFsmRate(unsigned int dwTestBytesCount, unsigned int *p
 }
 
 long double CFsmTest::TestFsmNibbleRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
+	if (m_pFsmNibble == NULL) {
+		if (pdwHits != NULL) {
+			*pdwHits = 0;
+		}
+		return 0;
+	}
+
 	m_pFsmNibble->Reset();
 	CLcg lcg;
 
@@ -387,6 +394,13 @@ long double CFsmTest::TestFsmNibbleRate(unsigned int dwTestBytesCount, unsigned 
 }
 
 long double CFsmTest::TestFsmByteRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
+	if (m_pFsmByte == NULL) {
+		if (pdwHits != NULL) {
+			*pdwHits = 0;
+		}
+		return 0;
+	}
+
 	m_pFsmByte->Reset();
 	CLcg lcg;
 
@@ -515,6 +529,24 @@ CFsmTest::STableSize CFsmTest::GetMinimalTableSize() const {
 
 	size.dwOutputTableSize = m_dwFsmOutputsCount * dwOutputCellSize;
 	size.dwTotalSize = size.dwFsmTableSize + size.dwOutputTableSize + sizeof(TSearchFsm::STable);
+
+	return size;
+}
+
+CFsmTest::STableSize CFsmTest::GetNibbleTableSize() const {
+	STableSize size;
+	size.dwFsmTableSize = m_rowsNibble.count() * sizeof(TFsmNibbleTable::value_type);
+	size.dwOutputTableSize = m_dwFsmNibbleOutputsCount * sizeof(TOutputTable::value_type);
+	size.dwTotalSize = size.dwFsmTableSize + size.dwOutputTableSize + sizeof(TSearchFsmNibble::STable);
+
+	return size;
+}
+
+CFsmTest::STableSize CFsmTest::GetByteTableSize() const {
+	STableSize size;
+	size.dwFsmTableSize = m_rowsByte.count() * sizeof(TFsmByteTable::value_type);
+	size.dwOutputTableSize = m_outputs.count() * sizeof(TOutputTable::value_type);
+	size.dwTotalSize = size.dwFsmTableSize + size.dwOutputTableSize + sizeof(TSearchFsmByte::STable);
 
 	return size;
 }
