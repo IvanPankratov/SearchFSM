@@ -31,11 +31,26 @@ public:
 		STableCell cell0, cell1;
 	};
 
+	// byte FSM structures
+	struct SByteTableRow {
+		QVector<STableCell> cells;
+	};
+
+	struct TByteTable {
+		QVector<SByteTableRow> rows;
+	};
+
+	enum EBitOrder {
+		bitOrder_MsbFirst, // as in patterns
+		bitOrder_LsbFirst
+	};
+
 public:
 	CFsmCreator(const TPatterns &patterns);
 
 public:
 	bool GenerateTables(bool fVerbose = false);
+	TByteTable CreateByteTable(int nBitsAtOnce, EBitOrder bitOrder = bitOrder_MsbFirst) const;
 	int GetStatesCount() const;
 	unsigned int GetCollisionsCount() const;
 	STableRow GetTableRow(int nRow) const;

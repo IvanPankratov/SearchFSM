@@ -64,6 +64,50 @@ bool CFsmCreator::GenerateTables(bool fVerbose) {
 	return true;
 }
 
+CFsmCreator::TByteTable CFsmCreator::CreateByteTable(int nBitsAtOnce, CFsmCreator::EBitOrder bitOrder) const {
+	const unsigned int dwColumnsCount = 1 << nBitsAtOnce;
+	const int nRowsCount = m_table.count();
+	TByteTable table;
+	table.rows.resize(nRowsCount);
+	int nRow;
+	for (nRow = 0; nRow < nRowsCount; nRow++) {
+		table.rows[nRow].cells.resize(dwColumnsCount);
+		unsigned int dwValue;
+		for (dwValue = 0; dwValue < dwColumnsCount; dwValue++) {
+			// in the state nRow got byte dwValue bit-by-bit
+			int nState = nRow;
+			TOutputList outputList;
+			int nBit;
+			for (nBit = 0; nBit < nBitsAtOnce; nBit++) {
+				unsigned char bBit;
+				if (bitOrder == bitOrder_LsbFirst) {
+					bBit = (dwValue >> nBit) & 0x01;
+				} else {
+					bBit = (dwValue >> (nBitsAtOnce - nBit - 1)) & 0x01;
+				}
+
+				const STableRow &row = m_table[nState];
+				const STableCell &cell = (bBit == 0)? row.cell0 : row.cell1;
+				nState = cell.nNextState;
+				int nBitsRemained = nBitsAtOnce - nBit - 1;
+				int idxOut;
+				for (idxOut = 0; idxOut < cell.output.count(); idxOut++) {
+					SOutput output = cell.output[idxOut];
+					output.nStepBack += nBitsRemained;
+					outputList.append(output);
+				}
+			}
+
+			STableCell cell;
+			cell.nNextState = nState;
+			cell.output = outputList;
+			table.rows[nRow].cells[dwValue] = cell;
+		}
+	}
+
+	return table;
+}
+
 int CFsmCreator::GetStatesCount() const {
 	return m_states.count();
 }
