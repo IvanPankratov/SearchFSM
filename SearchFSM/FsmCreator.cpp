@@ -26,6 +26,7 @@ CFsmCreator::CFsmCreator(const TPatterns &patterns):
 bool CFsmCreator::GenerateTables(bool fVerbose) {
 	m_states.clear();
 	m_idxStates.clear();
+	m_dwCollisions = 0;
 
 	{ // create initial state - all the parts are empty
 		SStateDescription state0;
@@ -67,6 +68,10 @@ int CFsmCreator::GetStatesCount() const {
 	return m_states.count();
 }
 
+unsigned int CFsmCreator::GetCollisionsCount() const {
+	return m_dwCollisions;
+}
+
 CFsmCreator::STableRow CFsmCreator::GetTableRow(int nRow) const {
 	return m_table[nRow];
 }
@@ -105,7 +110,7 @@ int CFsmCreator::AddState(const CFsmCreator::SStateDescription &state) {
 		if (AreEqual(state, m_states[nStateIdx])) { // found the same state
 			return nStateIdx;
 		} else if (idx == nStatesCount - 1) { // no equal state in the list - hash collision
-			fputs("Collision!\n", stderr);
+			m_dwCollisions++;
 		}
 	}
 

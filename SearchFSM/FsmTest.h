@@ -23,6 +23,7 @@ public:
 
 public:
 	bool CreateFsm(const TPatterns &patterns, bool fVerbose = false);
+	unsigned int GetCollisionsCount() const;
 	bool TraceFsm(int nDataLength);
 	bool TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, /* out, optional */ unsigned int *pdwHits = NULL);
 	// rate is measured in bytes per second
@@ -58,6 +59,7 @@ private:
 	TPatterns m_patterns;
 	int m_nMaxPatternLength;
 	int m_nMaxErrorsCount;
+	unsigned int m_dwCollisions;
 	TSearchFsm *m_pFsm;
 
 	// members for storing and releasing the tables

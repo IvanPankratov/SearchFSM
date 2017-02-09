@@ -79,6 +79,7 @@ private:
 CFsmTest::CFsmTest() {
 	m_nMaxPatternLength = 0;
 	m_nMaxErrorsCount = 0;
+	m_dwCollisions = 0;
 	m_pFsm = NULL;
 }
 
@@ -96,6 +97,7 @@ bool CFsmTest::CreateFsm(const TPatterns &patterns, bool fVerbose) {
 	// generate tables
 	CFsmCreator fsm(patterns);
 	fsm.GenerateTables(fVerbose);
+	m_dwCollisions = fsm.GetCollisionsCount();
 
 	// convert tables to format acceptable by CSearchFsm
 	TFsmTable rows;
@@ -135,6 +137,10 @@ bool CFsmTest::CreateFsm(const TPatterns &patterns, bool fVerbose) {
 	m_pFsm = new TSearchFsm(table);
 
 	return true;
+}
+
+unsigned int CFsmTest::GetCollisionsCount() const {
+	return m_dwCollisions;
 }
 
 bool CFsmTest::TraceFsm(int nDataLength) {

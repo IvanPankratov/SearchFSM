@@ -4,6 +4,7 @@
 #define FSMCREATOR_H
 
 #include <QList>
+#include <QVector>
 #include <QHash>
 #include <QString>
 
@@ -36,6 +37,7 @@ public:
 public:
 	bool GenerateTables(bool fVerbose = false);
 	int GetStatesCount() const;
+	unsigned int GetCollisionsCount() const;
 	STableRow GetTableRow(int nRow) const;
 
 private:
@@ -45,7 +47,7 @@ private:
 	};
 
 	struct SStatePart {
-		QList<SPrefix> prefixes; // found prefixes ordered by length from the least to the biggest
+		QVector<SPrefix> prefixes; // found prefixes ordered by length from the least to the biggest
 	};
 
 	struct SBitResultForPattern {
@@ -55,7 +57,7 @@ private:
 	};
 
 	struct SStateDescription {
-		QList<SStatePart> parts;
+		QVector<SStatePart> parts;
 	};
 
 	typedef unsigned int TStateHash;
@@ -78,7 +80,8 @@ private:
 	const TPatterns m_patterns;
 	QList<SStateDescription> m_states;
 	QHash<TStateHash, TIndexList> m_idxStates; // hash -> indexes list
-	QList<STableRow> m_table;
+	unsigned int m_dwCollisions;
+	QVector<STableRow> m_table;
 };
 
 #endif // FSMCREATOR_H
