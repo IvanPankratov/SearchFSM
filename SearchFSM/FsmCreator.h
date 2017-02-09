@@ -38,8 +38,13 @@ public:
 	STableRow GetTableRow(int nRow) const;
 
 private:
+	struct SPrefix {
+		int nLength;
+		int nErrors;
+	};
+
 	struct SStatePart {
-		QList<int> nsErrors; // errors in pattern prefixes
+		QList<SPrefix> prefixes; // found prefixes ordered by length from the least to the biggest
 	};
 
 	struct SBitResultForPattern {
@@ -58,8 +63,9 @@ private:
 
 private:
 	static bool AreEqual(const SStateDescription &state1, const SStateDescription &state2);
+	static bool AreEqual(const SStatePart &part1, const SStatePart &part2);
 	void DumpState(const SStateDescription &state);
-	void DumpStatePart(const SStatePart &part, const SPattern &pattern);
+	void DumpStatePart(const SStatePart &part);
 	void DumpOutput(const TOutputList &output);
 
 private:

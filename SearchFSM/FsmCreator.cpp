@@ -27,10 +27,10 @@ bool CFsmCreator::GenerateTables(bool fVerbose) {
 	m_states.clear();
 	SStateDescription state0;
 	{ // create initial state - all the parts are empty
-		SStatePart part0;
+		SStatePart emptyPart;
 		int idx, nCount = m_patterns.count();
 		for (idx = 0; idx < nCount; idx++) {
-			state0.parts << part0;
+			state0.parts << emptyPart;
 		}
 	}
 
@@ -114,43 +114,42 @@ CFsmCreator::SBitResultForPattern CFsmCreator::ProcessBitForPattern(const CFsmCr
 	SBitResultForPattern result;
 	result.fFound = false;
 	result.nErrors = -1;
-	SStatePart newStatePart;
-	// process errors in the very first bit - position 0
-	int nErrors0 = 0;
-	if (GetMaskBit(pattern, 0) != 0) {
-		// first bit is significnt
-		nErrors0 += bBit ^ GetBit(pattern, 0);
+
+	SStatePart nextStatePart;
+	// process prefix of length 1
+	int nErrors1 = 0;
+	if (GetMaskBit(pattern, 0) != 0) { // first bit is significnt
+		nErrors1 += bBit ^ GetBit(pattern, 0);
 	}
-	newStatePart.nsErrors << nErrors0;
+	if (nErrors1 <= pattern.nMaxErrors) {
+		SPrefix prefix1 = {1, nErrors1};
+		nextStatePart.prefixes << prefix1;
+	}
 
 	// process all the other bits
-	int idx, nCount = part.nsErrors.count();
+	int idx, nCount = part.prefixes.count();
 	for (idx = 0; idx < nCount; idx++) {
-		int nErrors = part.nsErrors[idx];
-		int nPosition = idx + 1;
-		if (nErrors <= pattern.nMaxErrors) {
-			if (GetMaskBit(pattern, nPosition)) {
-				nErrors += bBit ^ GetBit(pattern, nPosition);
+		const SPrefix &prefix = part.prefixes[idx];
+		int nNextLength = prefix.nLength + 1;
+		int nNextErrors = prefix.nErrors;
+		int nBit = nNextLength - 1;
+		if (GetMaskBit(pattern, nBit) != 0) {
+			nNextErrors += bBit ^ GetBit(pattern, nBit);
+		}
+
+		if (nNextErrors <= pattern.nMaxErrors) { // errors count is acceptable
+			if (nNextLength == pattern.nLength) { // the last bit
+				result.fFound = true;
+				result.nErrors = nNextErrors;
+
+			} else {
+				SPrefix nextPrefix = {nNextLength, nNextErrors};
+				nextStatePart.prefixes << nextPrefix;
 			}
 		}
-
-		if (nPosition < pattern.nLength - 1) {
-			newStatePart.nsErrors << nErrors;
-		} else if (nErrors <= pattern.nMaxErrors) { // found!
-			result.fFound = true;
-			result.nErrors = nErrors;
-		}
 	}
 
-	while (!newStatePart.nsErrors.isEmpty()) {
-		if (newStatePart.nsErrors.last() > pattern.nMaxErrors) {
-			newStatePart.nsErrors.removeLast();
-		} else {
-			break;
-		}
-	}
-
-	result.newStatePart = newStatePart;
+	result.newStatePart = nextStatePart;
 	return result;
 }
 
@@ -161,13 +160,26 @@ bool CFsmCreator::AreEqual(const CFsmCreator::SStateDescription &state1, const C
 		return false;
 	}
 	for (nPart = 0; nPart < nCount; nPart++) {
-		// compare parts
-		const SStatePart &part1 = state1.parts[nPart];
-		const SStatePart &part2 = state2.parts[nPart];
-		if (part1.nsErrors != part2.nsErrors) {
+		if (!AreEqual(state1.parts[nPart], state2.parts[nPart])) {
 			return false;
 		}
 	}
+	return true;
+}
+
+bool CFsmCreator::AreEqual(const CFsmCreator::SStatePart &part1, const CFsmCreator::SStatePart &part2) {
+	if (part1.prefixes.count() != part2.prefixes.count()) {
+		return false;
+	}
+	int idx;
+	for (idx = 0; idx < part1.prefixes.count(); idx++) {
+		if (part1.prefixes[idx].nLength != part2.prefixes[idx].nLength ||
+			part1.prefixes[idx].nErrors != part2.prefixes[idx].nErrors)
+		{
+			return false;
+		}
+	}
+
 	return true;
 }
 
@@ -178,27 +190,25 @@ void CFsmCreator::DumpState(const CFsmCreator::SStateDescription &state) {
 		if (nPart > 0) { // separate state parts
 			printf(" | ");
 		}
-		DumpStatePart(state.parts[nPart], m_patterns[nPart]);
+		DumpStatePart(state.parts[nPart]);
 	}
 	printf("}");
 }
 
-void CFsmCreator::DumpStatePart(const CFsmCreator::SStatePart &part, const SPattern &pattern) {
-	int nPos, nCount = part.nsErrors.count();
+void CFsmCreator::DumpStatePart(const CFsmCreator::SStatePart &part) {
+	int idx, nCount = part.prefixes.count();
 	bool fFirst = true;
-	for (nPos = nCount - 1; nPos >= 0; nPos--) {
-		int nErrors = part.nsErrors[nPos];
-		if (nErrors <= pattern.nMaxErrors) {
-			if (fFirst) {
-				fFirst = false;
-			} else {
-				printf(", ");
-			}
-			if (nErrors == 0 ) {
-				printf("%i", nPos + 1);
-			} else {
-				printf("%i-%i", nPos + 1, nErrors);
-			}
+	for (idx = nCount - 1; idx >= 0; idx--) {
+		if (fFirst) {
+			fFirst = false;
+		} else {
+			printf(", ");
+		}
+		int nErrors = part.prefixes[idx].nErrors;
+		if (nErrors == 0 ) {
+			printf("%i", idx + 1);
+		} else {
+			printf("%i-%i", idx + 1, nErrors);
 		}
 	}
 }
@@ -208,7 +218,7 @@ void CFsmCreator::DumpOutput(const TOutputList &output) {
 		return;
 	}
 
-	printf(" {");
+	printf(" * {");
 	int idx, nCount = output.count();
 	bool fFirst = true;
 	for (idx = 0; idx < nCount; idx++) {
