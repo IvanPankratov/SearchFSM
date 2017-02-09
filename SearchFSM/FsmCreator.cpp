@@ -70,7 +70,7 @@ CFsmCreator::STableRow CFsmCreator::GetTableRow(int nRow) const {
 	return m_table[nRow];
 }
 
-CFsmCreator::STableCell CFsmCreator::TransitState(const CFsmCreator::SStateDescription &state, unsigned char bBit) {
+CFsmCreator::STableCell CFsmCreator::TransitState(const SStateDescription &state, unsigned char bBit) {
 	// create next state
 	int idx, nCount = state.parts.count();
 	TOutputList outputList;
@@ -110,7 +110,7 @@ CFsmCreator::STableCell CFsmCreator::TransitState(const CFsmCreator::SStateDescr
 	return cell;
 }
 
-CFsmCreator::SBitResultForPattern CFsmCreator::ProcessBitForPattern(const CFsmCreator::SStatePart &part, const SPattern &pattern, unsigned char bBit) {
+CFsmCreator::SBitResultForPattern CFsmCreator::ProcessBitForPattern(const SStatePart &part, const SPattern &pattern, unsigned char bBit) {
 	SBitResultForPattern result;
 	result.fFound = false;
 	result.nErrors = -1;
@@ -153,7 +153,7 @@ CFsmCreator::SBitResultForPattern CFsmCreator::ProcessBitForPattern(const CFsmCr
 	return result;
 }
 
-bool CFsmCreator::AreEqual(const CFsmCreator::SStateDescription &state1, const CFsmCreator::SStateDescription &state2) {
+bool CFsmCreator::AreEqual(const SStateDescription &state1, const SStateDescription &state2) {
 	int nPart, nCount = state1.parts.count();
 	if (state2.parts.count() != nCount) {
 		puts("WTF? O_o");
@@ -167,14 +167,14 @@ bool CFsmCreator::AreEqual(const CFsmCreator::SStateDescription &state1, const C
 	return true;
 }
 
-bool CFsmCreator::AreEqual(const CFsmCreator::SStatePart &part1, const CFsmCreator::SStatePart &part2) {
+bool CFsmCreator::AreEqual(const SStatePart &part1, const SStatePart &part2) {
 	if (part1.prefixes.count() != part2.prefixes.count()) {
 		return false;
 	}
-	int idx;
-	for (idx = 0; idx < part1.prefixes.count(); idx++) {
-		if (part1.prefixes[idx].nLength != part2.prefixes[idx].nLength ||
-			part1.prefixes[idx].nErrors != part2.prefixes[idx].nErrors)
+	int nPrefix, nPrefixesCount = part1.prefixes.count();
+	for (nPrefix = 0; nPrefix < nPrefixesCount; nPrefix++) {
+		if (part1.prefixes[nPrefix].nLength != part2.prefixes[nPrefix].nLength ||
+			part1.prefixes[nPrefix].nErrors != part2.prefixes[nPrefix].nErrors)
 		{
 			return false;
 		}
@@ -183,7 +183,7 @@ bool CFsmCreator::AreEqual(const CFsmCreator::SStatePart &part1, const CFsmCreat
 	return true;
 }
 
-void CFsmCreator::DumpState(const CFsmCreator::SStateDescription &state) {
+void CFsmCreator::DumpState(const SStateDescription &state) {
 	int nPart, nCount = state.parts.count();
 	printf("{");
 	for (nPart = 0; nPart < nCount; nPart++) {
@@ -195,7 +195,7 @@ void CFsmCreator::DumpState(const CFsmCreator::SStateDescription &state) {
 	printf("}");
 }
 
-void CFsmCreator::DumpStatePart(const CFsmCreator::SStatePart &part) {
+void CFsmCreator::DumpStatePart(const SStatePart &part) {
 	int idx, nCount = part.prefixes.count();
 	bool fFirst = true;
 	for (idx = nCount - 1; idx >= 0; idx--) {
