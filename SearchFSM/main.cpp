@@ -87,7 +87,7 @@ void TestSpeed(const TPatterns patterns, bool fRecursive = false) {
 	PrintFsmStats(tester);
 
 	unsigned int dwHits;
-	bool fOk = tester.TestCorrectness(g_nTestCorrectnessBytes, &dwHits);
+	bool fOk = tester.TestCorrectness(g_nTestCorrectnessBytes, 0, &dwHits);
 	puts(fOk? "OK" : "FAIL");
 	Print(QString("Tested on %1 data, found %2 entries\n").arg(DataSizeToString(g_nTestCorrectnessBytes)).arg(dwHits));
 
@@ -173,7 +173,6 @@ int main(int argc, char *argv[]) {
 	patterns << pat1 << pat2;// << patTwoParts;
 
 	TestSpeed(patterns, true);
-	return 0;
 
 	CFsmTest tester;
 	printf("\nSearch FSM for patterns:\n");
@@ -185,7 +184,7 @@ int main(int argc, char *argv[]) {
 	tester.TraceFsm(g_nTraceBits);
 	printf("\nTesting FSM correctness... ");
 	unsigned int dwHits;
-	bool fOk = tester.TestCorrectness(g_nTestCorrectnessBytes, &dwHits);
+	bool fOk = tester.TestCorrectness(g_nTestCorrectnessBytes, 25, &dwHits);
 	printf("%s\n", fOk? "OK" : "FAIL");
 	Print(QString("Tested on %1 data, found %2 entries\n").arg(DataSizeToString(g_nTestCorrectnessBytes)).arg(dwHits));
 

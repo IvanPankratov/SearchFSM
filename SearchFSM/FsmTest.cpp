@@ -171,7 +171,7 @@ bool CFsmTest::TraceFsm(int nDataLength) {
 	return true;
 }
 
-bool CFsmTest::TestCorrectness(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
+bool CFsmTest::TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, unsigned int *pdwHits) {
 	// prepare shift register and test patterns
 	CShiftRegister testRegister(m_nMaxPatternLength);
 	QList<CShiftRegister::SPattern> registerPatterns;
@@ -187,8 +187,7 @@ bool CFsmTest::TestCorrectness(unsigned int dwTestBytesCount, unsigned int *pdwH
 	bool fCorrect = true;
 	unsigned int cBit = 0;
 	unsigned int cHits = 0;
-	const unsigned int nPrintHits = 10;
-	unsigned int cPrinted = 0;
+	int cPrinted = 0;
 	unsigned int dwByte;
 	for (dwByte = 0; dwByte < dwTestBytesCount; dwByte++) {
 		unsigned char bData = lcg.RandomByte();

@@ -187,3 +187,7 @@ TestSpeed(), проводящую измерения на конкретном �
 02.02.2017
 Merge branch 'fsm-test' in repos
 Conflicts: SearchFSM/FsmTest.h, SearchFSM/main.cpp, log.txt
+-
+In CFsmTest::TestCorrectness added parameter nPrintHits
+Добавил в метод CFsmTest::TestCorrectness параметр, отвечающий за количество печатаемых вхождений
+шаблонов.

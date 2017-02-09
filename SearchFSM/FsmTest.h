@@ -24,7 +24,7 @@ public:
 public:
 	bool CreateFsm(const TPatterns &patterns, bool fVerbose = false);
 	bool TraceFsm(int nDataLength);
-	bool TestCorrectness(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
+	bool TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, /* out, optional */ unsigned int *pdwHits = NULL);
 	// rate is measured in bytes per second
 	long double TestFsmRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
 	long double TestRegisterRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
