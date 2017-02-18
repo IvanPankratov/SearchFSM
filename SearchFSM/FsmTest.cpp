@@ -342,7 +342,7 @@ long double CFsmTest::TestFsmRate(unsigned int dwTestBytesCount, unsigned int *p
 		}
 	}
 	timer.Stop();
-	CWinTimer::TTime tSeconds = timer.GetDuration();
+	CWinTimer::TTime tSeconds = timer.GetThreadDuration();
 	long double dRate = dwTestBytesCount / tSeconds;
 
 	if (pdwHits != NULL) {
@@ -384,7 +384,7 @@ long double CFsmTest::TestFsmNibbleRate(unsigned int dwTestBytesCount, unsigned 
 		}
 	}
 	timer.Stop();
-	CWinTimer::TTime tSeconds = timer.GetDuration();
+	CWinTimer::TTime tSeconds = timer.GetThreadDuration();
 	long double dRate = dwTestBytesCount / tSeconds;
 
 	if (pdwHits != NULL) {
@@ -420,7 +420,7 @@ long double CFsmTest::TestFsmByteRate(unsigned int dwTestBytesCount, unsigned in
 		}
 	}
 	timer.Stop();
-	CWinTimer::TTime tSeconds = timer.GetDuration();
+	CWinTimer::TTime tSeconds = timer.GetThreadDuration();
 	long double dRate = dwTestBytesCount / tSeconds;
 
 	if (pdwHits != NULL) {
@@ -465,7 +465,7 @@ long double CFsmTest::TestRegisterRate(unsigned int dwTestBytesCount, unsigned i
 		}
 	}
 	timer.Stop();
-	CWinTimer::TTime tSeconds = timer.GetDuration();
+	CWinTimer::TTime tSeconds = timer.GetThreadDuration();
 	long double dRate = dwTestBytesCount / tSeconds;
 
 	if (pdwHits != NULL) {
