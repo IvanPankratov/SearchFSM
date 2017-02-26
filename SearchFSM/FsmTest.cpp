@@ -317,7 +317,7 @@ bool CFsmTest::TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, un
 	return fCorrect;
 }
 
-long double CFsmTest::TestFsmRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
+CFsmTest::SEnginePerformance CFsmTest::TestFsmRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
 	m_pFsm->Reset();
 	CLcg lcg;
 
@@ -342,21 +342,24 @@ long double CFsmTest::TestFsmRate(unsigned int dwTestBytesCount, unsigned int *p
 		}
 	}
 	timer.Stop();
-	CWinTimer::TTime tSeconds = timer.GetThreadDuration();
-	long double dRate = dwTestBytesCount / tSeconds;
+	CWinTimer::TTime tSeconds = timer.GetTotalDuration();
+	SEnginePerformance speed;
+	speed.dRate = dwTestBytesCount / tSeconds;
+	speed.dCpuUsage = timer.GetThreadDuration() / tSeconds;
+	speed.dCpuKernelUsage = timer.GetKernelDuration() / tSeconds;
 
 	if (pdwHits != NULL) {
 		*pdwHits = cHits;
 	}
-	return dRate;
+	return speed;
 }
 
-long double CFsmTest::TestFsmNibbleRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
+CFsmTest::SEnginePerformance CFsmTest::TestFsmNibbleRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
 	if (m_pFsmNibble == NULL) {
 		if (pdwHits != NULL) {
 			*pdwHits = 0;
 		}
-		return 0;
+		return (SEnginePerformance){0, 0, 0};
 	}
 
 	m_pFsmNibble->Reset();
@@ -385,20 +388,23 @@ long double CFsmTest::TestFsmNibbleRate(unsigned int dwTestBytesCount, unsigned 
 	}
 	timer.Stop();
 	CWinTimer::TTime tSeconds = timer.GetThreadDuration();
-	long double dRate = dwTestBytesCount / tSeconds;
+	SEnginePerformance speed;
+	speed.dRate = dwTestBytesCount / tSeconds;
+	speed.dCpuUsage = timer.GetThreadDuration() / tSeconds;
+	speed.dCpuKernelUsage = timer.GetKernelDuration() / tSeconds;
 
 	if (pdwHits != NULL) {
 		*pdwHits = cHits;
 	}
-	return dRate;
+	return speed;
 }
 
-long double CFsmTest::TestFsmByteRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
+CFsmTest::SEnginePerformance CFsmTest::TestFsmByteRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
 	if (m_pFsmByte == NULL) {
 		if (pdwHits != NULL) {
 			*pdwHits = 0;
 		}
-		return 0;
+		return (SEnginePerformance){0, 0, 0};
 	}
 
 	m_pFsmByte->Reset();
@@ -421,15 +427,18 @@ long double CFsmTest::TestFsmByteRate(unsigned int dwTestBytesCount, unsigned in
 	}
 	timer.Stop();
 	CWinTimer::TTime tSeconds = timer.GetThreadDuration();
-	long double dRate = dwTestBytesCount / tSeconds;
+	SEnginePerformance speed;
+	speed.dRate = dwTestBytesCount / tSeconds;
+	speed.dCpuUsage = timer.GetThreadDuration() / tSeconds;
+	speed.dCpuKernelUsage = timer.GetKernelDuration() / tSeconds;
 
 	if (pdwHits != NULL) {
 		*pdwHits = cHits;
 	}
-	return dRate;
+	return speed;
 }
 
-long double CFsmTest::TestRegisterRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
+CFsmTest::SEnginePerformance CFsmTest::TestRegisterRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
 	// prepare shift register and test patterns
 	CShiftRegister testRegister(m_nMaxPatternLength);
 	QList<CShiftRegister::SPattern> registerPatterns;
@@ -466,12 +475,15 @@ long double CFsmTest::TestRegisterRate(unsigned int dwTestBytesCount, unsigned i
 	}
 	timer.Stop();
 	CWinTimer::TTime tSeconds = timer.GetThreadDuration();
-	long double dRate = dwTestBytesCount / tSeconds;
+	SEnginePerformance speed;
+	speed.dRate = dwTestBytesCount / tSeconds;
+	speed.dCpuUsage = timer.GetThreadDuration() / tSeconds;
+	speed.dCpuKernelUsage = timer.GetKernelDuration() / tSeconds;
 
 	if (pdwHits != NULL) {
 		*pdwHits = cHits;
 	}
-	return dRate;
+	return speed;
 }
 
 void CFsmTest::ReleaseFsm() {

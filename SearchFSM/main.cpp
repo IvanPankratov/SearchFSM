@@ -130,17 +130,21 @@ STestResult TestSpeed(const TPatterns patterns) {
 	Print(QString("Tested on %1 data, found %2 entries\n").arg(DataSizeToString(g_nFastTestCorrectnessBytes)).arg(dwHits));
 
 	Print(QString("\nSpeed tests (on %1 data):\n").arg(DataSizeToString(g_nTestSpeedBytes)));
-	long double dFsmRate = tester.TestFsmRate(g_nTestSpeedBytes, &dwHits);
-	printf("FSM speed: %Lg MiB/s (found %i entries)\n", dFsmRate / g_dwMebi, dwHits);
+	CFsmTest::SEnginePerformance performance = tester.TestFsmRate(g_nTestSpeedBytes, &dwHits);
+	long double dFsmRate = performance.dRate;
+	printf("FSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", dFsmRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, dwHits);
 
-	long double dFsmNibbleRate = tester.TestFsmNibbleRate(g_nTestSpeedBytes, &dwHits);
-	printf("Nibble SearchFSM speed: %Lg MiB/s (found %i entries)\n", dFsmNibbleRate / g_dwMebi, dwHits);
+	performance = tester.TestFsmNibbleRate(g_nTestSpeedBytes, &dwHits);
+	long double dFsmNibbleRate = performance.dRate;
+	printf("Nibble SearchFSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", dFsmNibbleRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, dwHits);
 
-	long double dFsmByteRate = tester.TestFsmByteRate(g_nTestSpeedBytes, &dwHits);
-	printf("Byte SearchFSM speed: %Lg MiB/s (found %i entries)\n", dFsmByteRate / g_dwMebi, dwHits);
+	performance = tester.TestFsmByteRate(g_nTestSpeedBytes, &dwHits);
+	long double dFsmByteRate = performance.dRate;
+	printf("Byte SearchFSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", dFsmByteRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, dwHits);
 
-	long double dRegisterRate = tester.TestRegisterRate(g_nTestSpeedBytes, &dwHits);
-	printf("Register speed: %Lg MiB/s (found %i entries)\n", dRegisterRate / g_dwMebi, dwHits);
+	performance = tester.TestRegisterRate(g_nTestSpeedBytes, &dwHits);
+	long double dRegisterRate = performance.dRate;
+	printf("Register speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", dRegisterRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, dwHits);
 
 	STestResult result;
 	result.nFsmStates = tester.GetStatesCount();

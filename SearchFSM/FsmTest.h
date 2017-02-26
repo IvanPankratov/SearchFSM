@@ -29,6 +29,13 @@ public:
 	typedef QVector<TSearchFsmByte::STableRow> TFsmByteTable;
 	typedef QVector<TSearchFsm::SOutput> TOutputTable;
 
+	// time measurement results structure
+	struct SEnginePerformance {
+		long double dRate; // bytes per second
+		long double dCpuUsage;
+		long double dCpuKernelUsage;
+	};
+
 public:
 	CFsmTest();
 	~CFsmTest();
@@ -39,10 +46,10 @@ public:
 	bool TraceFsm(int nDataLength);
 	bool TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, /* out, optional */ unsigned int *pdwHits = NULL);
 	// rate is measured in bytes per second
-	long double TestFsmRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
-	long double TestFsmNibbleRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
-	long double TestFsmByteRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
-	long double TestRegisterRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
+	SEnginePerformance TestFsmRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
+	SEnginePerformance TestFsmNibbleRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
+	SEnginePerformance TestFsmByteRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
+	SEnginePerformance TestRegisterRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
 	void ReleaseFsm();
 
 public: // table size quering methods
