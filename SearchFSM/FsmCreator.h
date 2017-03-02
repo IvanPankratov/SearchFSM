@@ -53,7 +53,7 @@ public:
 	TByteTable CreateByteTable(int nBitsAtOnce, EBitOrder bitOrder = bitOrder_MsbFirst) const;
 	int GetStatesCount() const;
 	unsigned int GetCollisionsCount() const;
-	STableRow GetTableRow(int nRow) const;
+	const STableRow &GetTableRow(int nRow) const;
 
 private:
 	struct SPrefix {

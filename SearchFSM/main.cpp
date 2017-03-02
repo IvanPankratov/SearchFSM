@@ -111,7 +111,7 @@ STestResult TestSpeed(const TPatterns patterns) {
 			}
 			catch(...) {
 				puts("Failed to create bit SearchFSM!");
-				STestResult resultNo = {0};
+				STestResult resultNo = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 				return resultNo;
 			}
 		}

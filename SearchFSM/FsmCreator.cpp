@@ -120,7 +120,7 @@ unsigned int CFsmCreator::GetCollisionsCount() const {
 	return m_dwCollisions;
 }
 
-CFsmCreator::STableRow CFsmCreator::GetTableRow(int nRow) const {
+const CFsmCreator::STableRow &CFsmCreator::GetTableRow(int nRow) const {
 	return m_table[nRow];
 }
 
