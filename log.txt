@@ -304,3 +304,11 @@ Fix pack: structure initialization, reference return value
 В методе CFsmCreator::GetTableRow сдел возврат значения по ссылке вместо возврата по значению.
 Устранил несколько мелких недостатков: недостаточное количество инициализаторов структуры
 в main.cpp.
+-
+Method CFsmCreator::CreateFsmWrap to create SearchFSM wrap and use it at once
+В класс CFsmCreator добавил шаблонную структуру SFsmWrap<TSearchFsm>, которая позволит хранить
+любой поисковый автомат вместе с их таблицами (пока проверено только для битовых автоматов).
+Написан метод CFsmCreator::CreateFsmWrap() для создания такой структуры, что позволит переместить
+весь процесс создания уже готового к работе автомата в класс CFsmCreator.
+В шаблонных классах CSearchFsm и CSearchFsmByte параметры шаблона TStateIdx и TOutputIdx вынесены
+в typedef чтобы была возможность использовать их во внешних шаблонных функциях и структурах.

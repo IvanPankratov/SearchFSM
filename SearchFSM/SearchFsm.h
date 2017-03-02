@@ -10,10 +10,13 @@
 
 //////////////////////////////////////////////////////////////////////////
 /// \brief CSearchFsm<TStateIdx, TOutputIdx, TPatternIdx, TStepBack, TErrorsCount> class - template for SearchFSM
-template <class TStateIdx = unsigned int, class TOutputIdx = unsigned int, class TPatternIdx = unsigned int,
+template <class TStateIdx_ = unsigned int, class TOutputIdx_ = unsigned int, class TPatternIdx = unsigned int,
 	class TStepBack = unsigned int, class TErrorsCount = unsigned int>
 class CSearchFsm {
 public:
+	typedef TStateIdx_ TStateIdx;
+	typedef TOutputIdx_ TOutputIdx;
+
 	static const TOutputIdx sm_outputNull = (TOutputIdx)(-1);
 
 	// FSM table structures
@@ -77,10 +80,13 @@ private:
 //////////////////////////////////////////////////////////////////////////
 /// \brief CSearchFsmByte<nBitsAtOnce, TStateIdx, TOutputIdx, TPatternIdx, TStepBack, TErrorsCount>
 /// template class for byte SearchFSM
-template <const int nBitsAtOnce, class TStateIdx = unsigned int, class TOutputIdx = unsigned int,
+template <const int nBitsAtOnce, class TStateIdx_ = unsigned int, class TOutputIdx_ = unsigned int,
 	class TPatternIdx = unsigned int, 	class TStepBack = unsigned int, class TErrorsCount = unsigned int>
 class CSearchFsmByte {
 public:
+	typedef TStateIdx_ TStateIdx;
+	typedef TOutputIdx_ TOutputIdx;
+
 	static const TOutputIdx sm_outputNull = (TOutputIdx)(-1);
 	static const int g_nColumnsCount = (1 << nBitsAtOnce);
 	static const unsigned int g_dwByteMask = g_nColumnsCount - 1;

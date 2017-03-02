@@ -45,6 +45,17 @@ public:
 		bitOrder_LsbFirst
 	};
 
+	// SearchFSM structures - to create FSM at once and store the tables inside the structure
+	template <class TSearchFsm>
+	struct SFsmWrap {
+		// the fsm itself - mustn't be used out of the whole structure's scope
+		TSearchFsm fsm;
+
+		// members for storing and releasing the tables
+		const QVector<typename TSearchFsm::STableRow> m_rows;
+		const QVector<typename TSearchFsm::SOutput> m_outputTable;
+	};
+
 public:
 	CFsmCreator(const TPatterns &patterns);
 
@@ -54,6 +65,22 @@ public:
 	int GetStatesCount() const;
 	unsigned int GetCollisionsCount() const;
 	const STableRow &GetTableRow(int nRow) const;
+
+	// create SearchFSM at once - with stored tables
+	template <class TSearchFsm>
+	SFsmWrap<TSearchFsm> CreateFsmWrap();
+
+private: // output table handling
+	template <class TSearchFsm>
+	static typename TSearchFsm::TOutputIdx StoreOutputList(const TOutputList &outputList,
+		/* in-out */ QVector<typename TSearchFsm::SOutput> *pOutputTable);
+
+	template <class TSearchFsm>
+	static typename TSearchFsm::TOutputIdx StoreOutput(const typename TSearchFsm::SOutput &output,
+		/* in-out */ QVector<typename TSearchFsm::SOutput> *pOutputTable);
+
+	template <class TSearchFsm>
+	static bool AreEqual(const typename TSearchFsm::SOutput &output1, const typename TSearchFsm::SOutput &output2);
 
 private:
 	struct SPrefix {
@@ -98,5 +125,80 @@ private:
 	unsigned int m_dwCollisions;
 	QVector<STableRow> m_table;
 };
+
+// inline template members
+template<class TSearchFsm>
+CFsmCreator::SFsmWrap<TSearchFsm> CFsmCreator::CreateFsmWrap() {
+	QVector<typename TSearchFsm::STableRow> rows(GetStatesCount());
+	QVector<typename TSearchFsm::SOutput> outputs;
+	int nRow;
+	for (nRow = 0; nRow < GetStatesCount(); nRow++) {
+		const STableRow &row = GetTableRow(nRow);
+		typename TSearchFsm::STableCell cell0;
+		cell0.idxNextState = row.cell0.nNextState;
+		cell0.idxOutput = StoreOutputList<TSearchFsm>(row.cell0.output, &outputs);
+
+		typename TSearchFsm::STableCell cell1;
+		cell1.idxNextState = row.cell1.nNextState;
+		cell1.idxOutput = StoreOutputList<TSearchFsm>(row.cell1.output, &outputs);
+
+		typename TSearchFsm::STableRow fsmRow = {cell0, cell1};
+		rows[nRow] = fsmRow;
+	}
+
+	// release redundant memory
+	outputs.squeeze();
+
+	// create the structure describing bit SearchFSM table
+	typename TSearchFsm::STable table = {rows.constData(), outputs.constData(),
+		(unsigned int)rows.count(), (unsigned int)outputs.count()};
+	SFsmWrap<TSearchFsm> fsm = {table, rows, outputs};
+	return fsm;
+}
+
+// output table handling
+template<class TSearchFsm>
+typename TSearchFsm::TOutputIdx CFsmCreator::StoreOutputList(const TOutputList &outputList,
+	QVector<typename TSearchFsm::SOutput> *pOutputTable)
+{
+	if (outputList.isEmpty()) {
+		return TSearchFsm::sm_outputNull;
+	}
+
+	int idx;
+	typename TSearchFsm::TOutputIdx idxNext = TSearchFsm::sm_outputNull;
+	for (idx = outputList.count() - 1; idx >= 0; idx--) {
+		CFsmCreator::SOutput out = outputList[idx];
+		typename TSearchFsm::SOutput outputNew;
+		outputNew.patternIdx = out.nPatternIdx;
+		outputNew.errorsCount = out.nErrors;
+		outputNew.stepBack = out.nStepBack;
+		outputNew.idxNextOutput = idxNext;
+		idxNext = StoreOutput<TSearchFsm>(outputNew, pOutputTable);
+	}
+
+	return idxNext;
+}
+
+template<class TSearchFsm>
+typename TSearchFsm::TOutputIdx CFsmCreator::StoreOutput(const typename TSearchFsm::SOutput &output,
+	QVector<typename TSearchFsm::SOutput> *pOutputTable)
+{
+	int idx;
+	for (idx = 0; idx < pOutputTable->count(); idx++) {
+		if (AreEqual<TSearchFsm>(output, pOutputTable->at(idx))) {
+			return idx;
+		}
+	}
+
+	pOutputTable->push_back(output);
+	return pOutputTable->count() - 1;
+}
+
+template<class TSearchFsm>
+bool CFsmCreator::AreEqual(const typename TSearchFsm::SOutput &output1, const typename TSearchFsm::SOutput &output2) {
+	return (output1.patternIdx == output2.patternIdx) && (output1.errorsCount == output2.errorsCount) &&
+		(output1.stepBack == output2.stepBack) && (output1.idxNextOutput == output2.idxNextOutput);
+}
 
 #endif // FSMCREATOR_H
