@@ -312,3 +312,7 @@ Method CFsmCreator::CreateFsmWrap to create SearchFSM wrap and use it at once
 весь процесс создания уже готового к работе автомата в класс CFsmCreator.
 В шаблонных классах CSearchFsm и CSearchFsmByte параметры шаблона TStateIdx и TOutputIdx вынесены
 в typedef чтобы была возможность использовать их во внешних шаблонных функциях и структурах.
+
+30.03.2017
+Hot-fix: bad constant in LCG: 13 bits instead of 15 bits!
+Исправил опечатку в маске 15 битов в классе CLcg - вместо 15 битов использовались лишь 13 младших.

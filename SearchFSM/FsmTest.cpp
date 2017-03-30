@@ -24,7 +24,7 @@ public:
 	}
 
 	unsigned int NextRandom15Bits() {
-		const unsigned int s_dw15BitsMask = 0x00001fff;
+		const unsigned int s_dw15BitsMask = 0x00007fff;
 
 		// take bits 15-29 which are said to be the best distributed
 		return (NextRandomEntity() >> 15) & s_dw15BitsMask;
