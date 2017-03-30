@@ -316,3 +316,8 @@ Method CFsmCreator::CreateFsmWrap to create SearchFSM wrap and use it at once
 30.03.2017
 Hot-fix: bad constant in LCG: 13 bits instead of 15 bits!
 Исправил опечатку в маске 15 битов в классе CLcg - вместо 15 битов использовались лишь 13 младших.
+-
+Compiled with MSVC (not completely compatible with g++)
+Visual C++ не понимает конструкции вида (TWinTime){0, 0}, где TWinTime - имя структуры.
+Поэтому проект не компилируется в среде Visual Studio.
+Переделал.

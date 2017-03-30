@@ -63,9 +63,10 @@ void inline CWinTimer::Start() {
 	GetThreadTimes(GetCurrentThread(), &wtDummy, &wtDummy, &m_wtStartTimeKernel, &m_wtStartTimeUser);
 	GetSystemTimeAsFileTime(&m_wtStartTimeSystem);
 
-	m_wtUserDuration = (TWinTime){0, 0};
-	m_wtKernelDuration = (TWinTime){0, 0};
-	m_wtTotalDuration = (TWinTime){0, 0};
+	TWinTime wtZero = {0, 0};
+	m_wtUserDuration = wtZero;
+	m_wtKernelDuration = wtZero;
+	m_wtTotalDuration = wtZero;
 
 	m_fRunning = true;
 }

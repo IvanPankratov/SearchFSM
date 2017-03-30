@@ -359,7 +359,8 @@ CFsmTest::SEnginePerformance CFsmTest::TestFsmNibbleRate(unsigned int dwTestByte
 		if (pdwHits != NULL) {
 			*pdwHits = 0;
 		}
-		return (SEnginePerformance){0, 0, 0};
+		SEnginePerformance performance = {0, 0, 0};
+		return performance;
 	}
 
 	m_pFsmNibble->Reset();
@@ -404,7 +405,8 @@ CFsmTest::SEnginePerformance CFsmTest::TestFsmByteRate(unsigned int dwTestBytesC
 		if (pdwHits != NULL) {
 			*pdwHits = 0;
 		}
-		return (SEnginePerformance){0, 0, 0};
+		SEnginePerformance performance = {0, 0, 0};
+		return performance;
 	}
 
 	m_pFsmByte->Reset();
