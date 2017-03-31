@@ -257,13 +257,12 @@ bool CFsmTest::TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, un
 
 			// process bit by the registers
 			testRegister.PushBit(bBit);
-			for (idx = 0; idx <registerPatterns.count(); idx++) {
-				int nErrors = testRegister.TestPattern(registerPatterns[idx]);
-				int nMaxErrors = m_patterns[idx].nMaxErrors;
-				if (nErrors <= nMaxErrors && cBit >= (unsigned int)m_patterns[idx].nLength) {
+			for (idx = 0; idx < registerPatterns.count(); idx++) {
+				unsigned int dwErrors;
+				if (testRegister.TestPattern(registerPatterns[idx], &dwErrors) && cBit >= (unsigned int)m_patterns[idx].nLength) {
 					SFinding finding;
 					finding.nPatternIdx = idx;
-					finding.nErrors = nErrors;
+					finding.nErrors = dwErrors;
 					unsigned int dwPosition = cBit - m_patterns[idx].nLength;
 					finding.dwPosition = dwPosition;
 					regFindings << finding;
@@ -465,11 +464,9 @@ CFsmTest::SEnginePerformance CFsmTest::TestRegisterRate(unsigned int dwTestBytes
 
 			// process bit with the register
 			testRegister.PushBit(bBit);
-			for (idx = 0; idx <registerPatterns.count(); idx++) {
-				int nErrorsReg = testRegister.TestPattern(registerPatterns[idx]);
-				int nMaxErrors = m_patterns[idx].nMaxErrors;
+			for (idx = 0; idx < registerPatterns.count(); idx++) {
 				unsigned int dwPatternLength = m_patterns[idx].nLength;
-				if (nErrorsReg <= nMaxErrors && dwBit >= dwPatternLength) {
+				if (testRegister.TestPattern(registerPatterns[idx]) && dwBit >= dwPatternLength) {
 					cHits++;
 				}
 			}

@@ -15,17 +15,22 @@ public:
 	struct SPattern { // local format for quick comparison
 		TData pattern;
 		TData mask;
+		unsigned int dwMaxErrors;
 	};
 
 public: // constructor
+	CShiftRegister();
 	CShiftRegister(unsigned int dwLength);
 
 public: // preparing methods
+	void Init(unsigned int dwLength);
 	SPattern ConvertPattern(const ::SPattern &pattern);
+	unsigned int RequiredMemorySize() const;
 
 public: // working methods
 	void PushBit(unsigned char bBit);
-	unsigned int TestPattern(const SPattern &pattern) const;
+	bool TestPattern(const SPattern &pattern, unsigned int *pdwErrors) const;
+	bool TestPattern(const SPattern &pattern) const;
 
 private:
 	static void PushBit(unsigned char bBit, /* in-out */ TData *pData);

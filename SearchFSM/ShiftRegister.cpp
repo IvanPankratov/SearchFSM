@@ -6,7 +6,15 @@
 static const int g_nChunkLength = sizeof(CShiftRegister::TChunk) * BITS_IN_BYTE;
 
 // constructor
+CShiftRegister::CShiftRegister() {
+	m_dwLength = 0;
+}
+
 CShiftRegister::CShiftRegister(unsigned int dwLength) {
+	Init(dwLength);
+}
+
+void CShiftRegister::Init(unsigned int dwLength) {
 	m_dwLength = dwLength;
 	int nChunks = dwLength / g_nChunkLength; // fully used chunks
 	if (dwLength % g_nChunkLength != 0) { // some extra bits
@@ -26,7 +34,13 @@ CShiftRegister::SPattern CShiftRegister::ConvertPattern(const ::SPattern &patter
 		PushBit(GetMaskBit(pattern, nBit), &result.mask);
 	}
 
+	result.dwMaxErrors = pattern.nMaxErrors;
+
 	return result;
+}
+
+unsigned int CShiftRegister::RequiredMemorySize() const {
+	return m_Data.count() * sizeof(TChunk);
 }
 
 // working methods
@@ -34,7 +48,7 @@ void CShiftRegister::PushBit(unsigned char bBit) {
 	PushBit(bBit, &m_Data);
 }
 
-unsigned int CShiftRegister::TestPattern(const SPattern &pattern) const {
+bool CShiftRegister::TestPattern(const SPattern &pattern, unsigned int *pdwErrors) const {
 	const TChunk *pChunks = m_Data.data();
 	const TChunk *pPatternChunks = pattern.pattern.data();
 	const TChunk *pMaskChunks = pattern.mask.data();
@@ -46,7 +60,13 @@ unsigned int CShiftRegister::TestPattern(const SPattern &pattern) const {
 		cErrors += WeightTable(chunkDiff);
 	}
 
-	return cErrors;
+	*pdwErrors = cErrors;
+	return (cErrors <= pattern.dwMaxErrors);
+}
+
+bool CShiftRegister::TestPattern(const CShiftRegister::SPattern &pattern) const {
+	unsigned int dwDummy;
+	return TestPattern(pattern, &dwDummy);
 }
 
 // private
