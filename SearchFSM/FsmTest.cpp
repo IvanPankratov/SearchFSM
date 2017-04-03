@@ -361,6 +361,46 @@ CFsmTest::SEnginePerformance CFsmTest::TestFsmRate(unsigned int dwTestBytesCount
 	return speed;
 }
 
+CFsmTest::SEnginePerformance CFsmTest::TestFsmRate2(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
+	CFsmCreator fsmCreator(m_patterns);
+	fsmCreator.GenerateTables();
+	CFsmCreator::SFsmWrap<TSearchFsm> fsm = fsmCreator.CreateFsmWrap<TSearchFsm>();
+	fsm.fsm.Reset();
+	CLcg lcg;
+
+	// start test
+	CWinTimer timer;
+	unsigned int cHits = 0;
+	unsigned int dwByteIdx;
+	for (dwByteIdx = 0; dwByteIdx < dwTestBytesCount; dwByteIdx++) {
+		unsigned char bData = lcg.RandomByte();
+		int nBit;
+		for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {
+			// obtain next bit
+			unsigned char bBit = GetHiBit(bData, nBit);
+
+			// process bit by FSM
+			unsigned int dwOut = fsm.fsm.PushBit(bBit);
+			while (dwOut != TSearchFsm::sm_outputNull) {
+				cHits++;
+				const TSearchFsm::SOutput &out = fsm.fsm.GetOutput(dwOut);
+				dwOut = out.idxNextOutput;
+			}
+		}
+	}
+	timer.Stop();
+	CWinTimer::TTime tSeconds = timer.GetTotalDuration();
+	SEnginePerformance speed;
+	speed.dRate = dwTestBytesCount / tSeconds;
+	speed.dCpuUsage = timer.GetThreadDuration() / tSeconds;
+	speed.dCpuKernelUsage = timer.GetKernelDuration() / tSeconds;
+
+	if (pdwHits != NULL) {
+		*pdwHits = cHits;
+	}
+	return speed;
+}
+
 CFsmTest::SEnginePerformance CFsmTest::TestFsmNibbleRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
 	if (m_pFsmNibble == NULL) {
 		if (pdwHits != NULL) {

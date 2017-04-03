@@ -134,6 +134,9 @@ STestResult TestSpeed(const TPatterns patterns) {
 	long double dFsmRate = performance.dRate;
 	printf("FSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", dFsmRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, dwHits);
 
+	performance = tester.TestFsmRate2(g_nTestSpeedBytes, &dwHits);
+	printf("FSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", performance.dRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, dwHits);
+
 	performance = tester.TestFsmNibbleRate(g_nTestSpeedBytes, &dwHits);
 	long double dFsmNibbleRate = performance.dRate;
 	printf("Nibble SearchFSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", dFsmNibbleRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, dwHits);
