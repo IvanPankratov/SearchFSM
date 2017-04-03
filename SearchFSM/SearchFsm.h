@@ -18,6 +18,7 @@ public:
 	typedef TOutputIdx_ TOutputIdx;
 
 	static const TOutputIdx sm_outputNull = (TOutputIdx)(-1);
+	static const int g_nColumnsCount = 2;
 
 	// FSM table structures
 	struct STableCell {

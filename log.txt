@@ -371,3 +371,7 @@ Changed interface of TestFsmRate2 and TestRegisterRate2
 Rename STableSize to SFsmTableSize, etc
 Переименовал структуру STableSize в SFsmTableSize, перенёс её выше - для использования в структуре
 SEnginePerformance, переименовал некоторые поля.
+-
+Added static field g_nColumnsCount to bit SearchFSM class CSearchFsm
+Добавил в класс битового поискового автомата CSearchFsm поле g_nColumnsCount для унификации
+с классом байтового поискового автомата CSearchFsmByte.
