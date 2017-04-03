@@ -136,7 +136,8 @@ STestResult TestSpeed(const TPatterns patterns) {
 
 	if (tester.TestFsmRate2(g_nTestSpeedBytes, &performance)) {
 		printf("FSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", performance.dRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, performance.dwHits);
-		printf("%i states, %i memory, %Lg init-time\n", performance.dwStatesCount, performance.dwMemoryRequirements, performance.timInitialization.dTotalTime);
+		printf("%i states, %i (%i) memory, %Lg init-time\n", performance.fsmStatistics.dwStatesCount, performance.dwMemoryRequirements,
+			performance.fsmStatistics.tableMinSize.dwTotalSize, performance.timInitialization.dTotalTime);
 	}
 
 	performance = tester.TestFsmNibbleRate(g_nTestSpeedBytes, &dwHits);

@@ -42,6 +42,12 @@ public:
 		unsigned int dwOutputTableSize;
 	};
 
+	struct SFsmStatistics {
+		unsigned int dwStatesCount;
+		SFsmTableSize tableSize;
+		SFsmTableSize tableMinSize;
+	};
+
 	struct SEnginePerformance {
 		STimeings timInitialization;
 		STimeings timOperating;
@@ -51,10 +57,7 @@ public:
 		// memory requirements and other statistics
 		unsigned int dwMemoryRequirements; // total memory requirements
 		bool fIsFsm; // true for FSMs
-		// for FSMs only
-		SFsmTableSize tableSize;
-		SFsmTableSize tableMinSize;
-		unsigned int dwStatesCount;
+		SFsmStatistics fsmStatistics; // for FSMs only
 
 		// obsolete
 		long double dRate; // bytes per second
@@ -80,6 +83,13 @@ public:
 	SEnginePerformance TestRegisterRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
 	bool TestRegisterRate2(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 	void ReleaseFsm();
+
+public: // table size calculating methods
+	template <class TSearchFsm_>
+	static SFsmTableSize GetTableSize(const CFsmCreator::SFsmWrap<TSearchFsm_>& wrap);
+
+	template <class TSearchFsm_>
+	static SFsmTableSize GetMinimalTableSize(const CFsmCreator::SFsmWrap<TSearchFsm_>& fsm);
 
 public: // table size quering methods
 	unsigned int GetStatesCount() const {return m_rows.count();}

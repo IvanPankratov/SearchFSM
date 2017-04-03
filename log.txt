@@ -375,3 +375,11 @@ SEnginePerformance, переименовал некоторые поля.
 Added static field g_nColumnsCount to bit SearchFSM class CSearchFsm
 Добавил в класс битового поискового автомата CSearchFsm поле g_nColumnsCount для унификации
 с классом байтового поискового автомата CSearchFsmByte.
+-
+Engine test statistics refactoring
+Сделал шаблонные статические методы GetTableSize и GetMinimalTableSize для вычисления потребностей
+в памяти автоматов по имеющейся обёртке CFsmCreator::SFsmWrap.
+Вынес автоматную статистику из структуры SEnginePerformance в отдельную структуру SFsmStatistics.
+Реализовал заполнение новой статистики в структуру SEnginePerformance в шаблонном методе
+тестирования.
+Стало красивее и логичнее.
