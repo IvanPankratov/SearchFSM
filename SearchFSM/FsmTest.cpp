@@ -494,7 +494,9 @@ CFsmTest::SEnginePerformance CFsmTest::TestRegisterRate(unsigned int dwTestBytes
 }
 
 CFsmTest::SEnginePerformance CFsmTest::TestRegisterRate2(unsigned int dwTestBytesCount) {
-	return TestEngine<CRegisterSearch>(dwTestBytesCount);
+	SEnginePerformance performance;
+	TestEngine<CRegisterSearch>(dwTestBytesCount, &performance);
+	return performance;
 }
 
 void CFsmTest::ReleaseFsm() {
@@ -588,44 +590,51 @@ unsigned int CFsmTest::GetMinimalDataSize(unsigned int nMaxValue) {
 }
 
 template <class TSearchEngine>
-CFsmTest::SEnginePerformance CFsmTest::TestEngine(unsigned int dwTestBytesCount) {
-	// prepare engine
-	CWinTimer timer;
-	typename TSearchEngine::TSearchData searchData = TSearchEngine::InitEngine(m_patterns);
-	timer.Stop();
-	SEnginePerformance performance;
-	performance.timInitialization = GetTimings(timer);
-	TSearchEngine::FillStatistics(searchData, &performance);
-	unsigned int dwCheckLengthBytes = m_nMaxPatternLength / BITS_IN_BYTE + 1;
-	if (dwTestBytesCount < dwCheckLengthBytes) {
-		dwCheckLengthBytes = dwTestBytesCount;
+bool CFsmTest::TestEngine(unsigned int dwTestBytesCount, SEnginePerformance *pResult) {
+	try {
+		// prepare engine
+		CWinTimer timer;
+		typename TSearchEngine::TSearchData searchData = TSearchEngine::InitEngine(m_patterns);
+		timer.Stop();
+		SEnginePerformance performance;
+		performance.timInitialization = GetTimings(timer);
+		TSearchEngine::FillStatistics(searchData, &performance);
+		unsigned int dwCheckLengthBytes = m_nMaxPatternLength / BITS_IN_BYTE + 1;
+		if (dwTestBytesCount < dwCheckLengthBytes) {
+			dwCheckLengthBytes = dwTestBytesCount;
+		}
+
+		// start test
+		CLcg lcg;
+		timer.Start();
+		unsigned int cHits = 0;
+		unsigned int dwBytes;
+		for (dwBytes = 0; dwBytes < dwCheckLengthBytes; dwBytes++) {
+			unsigned char bData = lcg.RandomByte();
+			cHits += TSearchEngine::ProcessByteCheckLength(bData, &searchData);
+		}
+		for (; dwBytes < dwTestBytesCount; dwBytes++) {
+			unsigned char bData = lcg.RandomByte();
+			cHits += TSearchEngine::ProcessByte(bData, &searchData);
+		}
+		timer.Stop();
+		performance.timOperating = GetTimings(timer);
+		performance.dwBytesCount = dwTestBytesCount;
+		performance.dwHits = cHits;
+
+		// obsolete
+		CWinTimer::TTime tSeconds = timer.GetTotalDuration();
+		performance.dRate = dwTestBytesCount / tSeconds;
+		performance.dCpuUsage = timer.GetThreadDuration() / tSeconds;
+		performance.dCpuKernelUsage = timer.GetKernelDuration() / tSeconds;
+
+		*pResult = performance;
+	}
+	catch(...) {
+		return false;
 	}
 
-	// start test
-	CLcg lcg;
-	timer.Start();
-	unsigned int cHits = 0;
-	unsigned int dwBytes;
-	for (dwBytes = 0; dwBytes < dwCheckLengthBytes; dwBytes++) {
-		unsigned char bData = lcg.RandomByte();
-		cHits += TSearchEngine::ProcessByteCheckLength(bData, &searchData);
-	}
-	for (; dwBytes < dwTestBytesCount; dwBytes++) {
-		unsigned char bData = lcg.RandomByte();
-		cHits += TSearchEngine::ProcessByte(bData, &searchData);
-	}
-	timer.Stop();
-	performance.timOperating = GetTimings(timer);
-	performance.dwBytesCount = dwTestBytesCount;
-	performance.dwHits = cHits;
-
-	// obsolete
-	CWinTimer::TTime tSeconds = timer.GetTotalDuration();
-	performance.dRate = dwTestBytesCount / tSeconds;
-	performance.dCpuUsage = timer.GetThreadDuration() / tSeconds;
-	performance.dCpuKernelUsage = timer.GetKernelDuration() / tSeconds;
-
-	return performance;
+	return true;
 }
 
 CFsmTest::TFindingsList CFsmTest::ProcessBitByFsm(unsigned int dwProcessedBits, unsigned char bBit) {

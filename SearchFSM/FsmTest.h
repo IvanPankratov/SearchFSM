@@ -85,7 +85,7 @@ private:
 	static unsigned int GetMinimalDataSize(unsigned int nMaxValue);
 
 	template <class TSearchEngine>
-	SEnginePerformance TestEngine(unsigned int dwTestBytesCount);
+	bool TestEngine(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 
 private:
 	class CRegisterSearch;
