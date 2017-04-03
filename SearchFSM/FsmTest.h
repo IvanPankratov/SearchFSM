@@ -61,7 +61,7 @@ public:
 	bool TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, /* out, optional */ unsigned int *pdwHits = NULL);
 	// rate is measured in bytes per second
 	SEnginePerformance TestFsmRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
-	SEnginePerformance TestFsmRate2(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
+	SEnginePerformance TestFsmRate2(unsigned int dwTestBytesCount);
 	SEnginePerformance TestFsmNibbleRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
 	SEnginePerformance TestFsmByteRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
 	SEnginePerformance TestRegisterRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
@@ -89,6 +89,7 @@ private:
 	bool TestEngine(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 
 private:
+	class CBitFsmSearch;
 	class CRegisterSearch;
 
 	struct SFinding {

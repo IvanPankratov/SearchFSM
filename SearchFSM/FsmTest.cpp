@@ -361,44 +361,10 @@ CFsmTest::SEnginePerformance CFsmTest::TestFsmRate(unsigned int dwTestBytesCount
 	return speed;
 }
 
-CFsmTest::SEnginePerformance CFsmTest::TestFsmRate2(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
-	CFsmCreator fsmCreator(m_patterns);
-	fsmCreator.GenerateTables();
-	CFsmCreator::SFsmWrap<TSearchFsm> fsm = fsmCreator.CreateFsmWrap<TSearchFsm>();
-	fsm.fsm.Reset();
-	CLcg lcg;
-
-	// start test
-	CWinTimer timer;
-	unsigned int cHits = 0;
-	unsigned int dwByteIdx;
-	for (dwByteIdx = 0; dwByteIdx < dwTestBytesCount; dwByteIdx++) {
-		unsigned char bData = lcg.RandomByte();
-		int nBit;
-		for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {
-			// obtain next bit
-			unsigned char bBit = GetHiBit(bData, nBit);
-
-			// process bit by FSM
-			unsigned int dwOut = fsm.fsm.PushBit(bBit);
-			while (dwOut != TSearchFsm::sm_outputNull) {
-				cHits++;
-				const TSearchFsm::SOutput &out = fsm.fsm.GetOutput(dwOut);
-				dwOut = out.idxNextOutput;
-			}
-		}
-	}
-	timer.Stop();
-	CWinTimer::TTime tSeconds = timer.GetTotalDuration();
-	SEnginePerformance speed;
-	speed.dRate = dwTestBytesCount / tSeconds;
-	speed.dCpuUsage = timer.GetThreadDuration() / tSeconds;
-	speed.dCpuKernelUsage = timer.GetKernelDuration() / tSeconds;
-
-	if (pdwHits != NULL) {
-		*pdwHits = cHits;
-	}
-	return speed;
+CFsmTest::SEnginePerformance CFsmTest::TestFsmRate2(unsigned int dwTestBytesCount) {
+	SEnginePerformance performance;
+	TestEngine<CBitFsmSearch>(dwTestBytesCount, &performance);
+	return performance;
 }
 
 CFsmTest::SEnginePerformance CFsmTest::TestFsmNibbleRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
@@ -912,6 +878,89 @@ unsigned int CFsmTest::CRegisterSearch::ProcessByte(const unsigned char bData, C
 			if (pSearchData->reg.TestPattern(pSearchData->patterns[dwPatternIdx])) {
 				cHits++;
 			}
+		}
+	}
+
+	return cHits;
+}
+
+/// CFsmTest::CBitFsmSearch - search with a bit SearchFSM
+class CFsmTest::CBitFsmSearch {
+public: // data
+	struct TSearchData {
+		CFsmCreator::SFsmWrap<TSearchFsm> fsm;
+		unsigned int dwBits;
+		unsigned int dwMemoryRequirements; // total memory requirements
+		unsigned int dwStatesCount; // for FSMs only
+	};
+
+public: // initialization & statictics
+	static TSearchData InitEngine(const TPatterns& patterns);
+	static void FillStatistics(const TSearchData &data, CFsmTest::SEnginePerformance *pPerformance);
+
+public: // working methods
+	static unsigned int ProcessByteCheckLength(const unsigned char bData, TSearchData *pSearchData);
+	static unsigned int ProcessByte(const unsigned char bData, TSearchData *pSearchData);
+};
+
+CFsmTest::CBitFsmSearch::TSearchData CFsmTest::CBitFsmSearch::InitEngine(const TPatterns &patterns) {
+	CFsmCreator fsm(patterns);
+	fsm.GenerateTables();
+	TSearchData data = {fsm.CreateFsmWrap<TSearchFsm>(), 0};
+
+	// store statistics
+	unsigned int dwStatesCount = fsm.GetStatesCount();
+	STableSize size;
+	size.dwFsmTableSize = dwStatesCount * sizeof(TSearchFsm::STableRow);
+	size.dwOutputTableSize = data.fsm.m_outputTable.count() * sizeof(TSearchFsm::SOutput);
+	size.dwTotalSize = size.dwFsmTableSize + size.dwOutputTableSize + sizeof(TSearchFsm::STable);
+	data.dwMemoryRequirements = size.dwTotalSize;
+	data.dwStatesCount = dwStatesCount;
+	data.fsm.fsm.Reset();
+
+	return data;
+}
+
+void CFsmTest::CBitFsmSearch::FillStatistics(const CFsmTest::CBitFsmSearch::TSearchData &data, CFsmTest::SEnginePerformance *pPerformance) {
+	pPerformance->dwMemoryRequirements = data.dwMemoryRequirements;
+	pPerformance->dwStatesCount = data.dwStatesCount;
+}
+
+unsigned int CFsmTest::CBitFsmSearch::ProcessByteCheckLength(const unsigned char bData, CFsmTest::CBitFsmSearch::TSearchData *pSearchData) {
+	unsigned int cHits = 0;
+	int nBit;
+	for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {
+		// obtain next bit
+		unsigned char bBit = GetHiBit(bData, nBit);
+
+		// process bit by FSM
+		unsigned int dwOut = pSearchData->fsm.fsm.PushBit(bBit);
+		pSearchData->dwBits++;
+		while (dwOut != TSearchFsm::sm_outputNull) {
+			const TSearchFsm::SOutput &out = pSearchData->fsm.fsm.GetOutput(dwOut);
+			if (out.stepBack <= pSearchData->dwBits) { // enough data
+				cHits++;
+			}
+			dwOut = out.idxNextOutput;
+		}
+	}
+
+	return cHits;
+}
+
+unsigned int CFsmTest::CBitFsmSearch::ProcessByte(const unsigned char bData, CFsmTest::CBitFsmSearch::TSearchData *pSearchData) {
+	unsigned int cHits = 0;
+	int nBit;
+	for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {
+		// obtain next bit
+		unsigned char bBit = GetHiBit(bData, nBit);
+
+		// process bit by FSM
+		unsigned int dwOut = pSearchData->fsm.fsm.PushBit(bBit);
+		while (dwOut != TSearchFsm::sm_outputNull) {
+			cHits++;
+			const TSearchFsm::SOutput &out = pSearchData->fsm.fsm.GetOutput(dwOut);
+			dwOut = out.idxNextOutput;
 		}
 	}
 
