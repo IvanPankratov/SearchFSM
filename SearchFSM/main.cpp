@@ -146,6 +146,9 @@ STestResult TestSpeed(const TPatterns patterns) {
 	long double dRegisterRate = performance.dRate;
 	printf("Register speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", dRegisterRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, dwHits);
 
+	performance = tester.TestRegisterRate2(g_nTestSpeedBytes);
+	printf("Register speed (pattern): %Lg MiB/s, %Lg, %Lg (found %i entries)\n", performance.dRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, performance.dwHits);
+
 	STestResult result;
 	result.nFsmStates = tester.GetStatesCount();
 	result.dwTableSize = tester.GetTableSize().dwTotalSize;

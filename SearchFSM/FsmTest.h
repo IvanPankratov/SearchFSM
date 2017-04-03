@@ -30,7 +30,21 @@ public:
 	typedef QVector<TSearchFsm::SOutput> TOutputTable;
 
 	// time measurement results structure
+	struct STimeings { // tim
+		long double dTotalTime;
+		long double dCpuTime;
+		long double dKernelTime;
+	};
+
 	struct SEnginePerformance {
+		STimeings timInitialization;
+		STimeings timOperating;
+		unsigned int dwBytesCount; // overall bytes processed
+		unsigned int dwMemoryRequirements; // total memory requirements
+		unsigned int dwStatesCount; // for FSMs only
+		unsigned int dwHits;
+
+		// obsolete
 		long double dRate; // bytes per second
 		long double dCpuUsage;
 		long double dCpuKernelUsage;
@@ -50,6 +64,7 @@ public:
 	SEnginePerformance TestFsmNibbleRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
 	SEnginePerformance TestFsmByteRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
 	SEnginePerformance TestRegisterRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
+	SEnginePerformance TestRegisterRate2(unsigned int dwTestBytesCount);
 	void ReleaseFsm();
 
 public: // table size quering methods
@@ -69,7 +84,12 @@ public: // table size quering methods
 private:
 	static unsigned int GetMinimalDataSize(unsigned int nMaxValue);
 
+	template <class TSearchEngine>
+	SEnginePerformance TestEngine(unsigned int dwTestBytesCount);
+
 private:
+	class CRegisterSearch;
+
 	struct SFinding {
 		int nPatternIdx;
 		int nErrors;

@@ -76,6 +76,14 @@ private:
 	unsigned char m_bLcg2Value;
 };
 
+CFsmTest::STimeings GetTimings(const CWinTimer &timer) {
+	CFsmTest::STimeings results;
+	results.dTotalTime = timer.GetTotalDuration();
+	results.dCpuTime = timer.GetThreadDuration();
+	results.dKernelTime = timer.GetKernelDuration();
+	return results;
+}
+
 CFsmTest::CFsmTest() {
 	m_nMaxPatternLength = 0;
 	m_nMaxErrorsCount = 0;
@@ -387,7 +395,7 @@ CFsmTest::SEnginePerformance CFsmTest::TestFsmNibbleRate(unsigned int dwTestByte
 		}
 	}
 	timer.Stop();
-	CWinTimer::TTime tSeconds = timer.GetThreadDuration();
+	CWinTimer::TTime tSeconds = timer.GetTotalDuration();
 	SEnginePerformance speed;
 	speed.dRate = dwTestBytesCount / tSeconds;
 	speed.dCpuUsage = timer.GetThreadDuration() / tSeconds;
@@ -427,7 +435,7 @@ CFsmTest::SEnginePerformance CFsmTest::TestFsmByteRate(unsigned int dwTestBytesC
 		}
 	}
 	timer.Stop();
-	CWinTimer::TTime tSeconds = timer.GetThreadDuration();
+	CWinTimer::TTime tSeconds = timer.GetTotalDuration();
 	SEnginePerformance speed;
 	speed.dRate = dwTestBytesCount / tSeconds;
 	speed.dCpuUsage = timer.GetThreadDuration() / tSeconds;
@@ -473,7 +481,7 @@ CFsmTest::SEnginePerformance CFsmTest::TestRegisterRate(unsigned int dwTestBytes
 		}
 	}
 	timer.Stop();
-	CWinTimer::TTime tSeconds = timer.GetThreadDuration();
+	CWinTimer::TTime tSeconds = timer.GetTotalDuration();
 	SEnginePerformance speed;
 	speed.dRate = dwTestBytesCount / tSeconds;
 	speed.dCpuUsage = timer.GetThreadDuration() / tSeconds;
@@ -483,6 +491,10 @@ CFsmTest::SEnginePerformance CFsmTest::TestRegisterRate(unsigned int dwTestBytes
 		*pdwHits = cHits;
 	}
 	return speed;
+}
+
+CFsmTest::SEnginePerformance CFsmTest::TestRegisterRate2(unsigned int dwTestBytesCount) {
+	return TestEngine<CRegisterSearch>(dwTestBytesCount);
 }
 
 void CFsmTest::ReleaseFsm() {
@@ -573,6 +585,47 @@ unsigned int CFsmTest::GetMinimalDataSize(unsigned int nMaxValue) {
 	} else {
 		return 8;
 	}
+}
+
+template <class TSearchEngine>
+CFsmTest::SEnginePerformance CFsmTest::TestEngine(unsigned int dwTestBytesCount) {
+	// prepare engine
+	CWinTimer timer;
+	typename TSearchEngine::TSearchData searchData = TSearchEngine::InitEngine(m_patterns);
+	timer.Stop();
+	SEnginePerformance performance;
+	performance.timInitialization = GetTimings(timer);
+	TSearchEngine::FillStatistics(searchData, &performance);
+	unsigned int dwCheckLengthBytes = m_nMaxPatternLength / BITS_IN_BYTE + 1;
+	if (dwTestBytesCount < dwCheckLengthBytes) {
+		dwCheckLengthBytes = dwTestBytesCount;
+	}
+
+	// start test
+	CLcg lcg;
+	timer.Start();
+	unsigned int cHits = 0;
+	unsigned int dwBytes;
+	for (dwBytes = 0; dwBytes < dwCheckLengthBytes; dwBytes++) {
+		unsigned char bData = lcg.RandomByte();
+		cHits += TSearchEngine::ProcessByteCheckLength(bData, &searchData);
+	}
+	for (; dwBytes < dwTestBytesCount; dwBytes++) {
+		unsigned char bData = lcg.RandomByte();
+		cHits += TSearchEngine::ProcessByte(bData, &searchData);
+	}
+	timer.Stop();
+	performance.timOperating = GetTimings(timer);
+	performance.dwBytesCount = dwTestBytesCount;
+	performance.dwHits = cHits;
+
+	// obsolete
+	CWinTimer::TTime tSeconds = timer.GetTotalDuration();
+	performance.dRate = dwTestBytesCount / tSeconds;
+	performance.dCpuUsage = timer.GetThreadDuration() / tSeconds;
+	performance.dCpuKernelUsage = timer.GetKernelDuration() / tSeconds;
+
+	return performance;
 }
 
 CFsmTest::TFindingsList CFsmTest::ProcessBitByFsm(unsigned int dwProcessedBits, unsigned char bBit) {
@@ -717,4 +770,101 @@ CFsmTest::TOutputIdx CFsmTest::StoreOutput(const TSearchFsm::SOutput &output, CF
 bool CFsmTest::IsEqual(const TSearchFsm::SOutput &output1, const TSearchFsm::SOutput &output2) {
 	return (output1.patternIdx == output2.patternIdx) && (output1.errorsCount == output2.errorsCount) &&
 		(output1.stepBack == output2.stepBack) && (output1.idxNextOutput == output2.idxNextOutput);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// Search engine classes
+//////////////////////////////////////////////////////////////////////////////
+
+/// CFsmTest::CRegisterSearch - simple search with a shift register
+class CFsmTest::CRegisterSearch {
+public: // data
+	struct TSearchData {
+		QList<CShiftRegister::SPattern> patterns;
+		unsigned int dwPatternsCount;
+		TPatterns initialPatterns;
+		CShiftRegister reg;
+		unsigned int dwBits;
+	};
+
+public: // initialization & statictics
+	static TSearchData InitEngine(const TPatterns& patterns);
+	static void FillStatistics(const TSearchData &data, CFsmTest::SEnginePerformance *pPerformance);
+
+public: // working methods
+	static unsigned int ProcessByteCheckLength(const unsigned char bData, TSearchData *pSearchData);
+	static unsigned int ProcessByte(const unsigned char bData, TSearchData *pSearchData);
+};
+
+CFsmTest::CRegisterSearch::TSearchData CFsmTest::CRegisterSearch::InitEngine(const TPatterns &patterns) {
+	// analyse patterns
+	int nMaxPatternLength = 0;
+	int idx;
+	for (idx = 0; idx < patterns.count(); idx++) {
+		int nLength = patterns[idx].nLength;
+		if (nMaxPatternLength < nLength) {
+			nMaxPatternLength = nLength;
+		}
+	}
+
+	// prepare shift register and test patterns
+	TSearchData data;
+	data.dwPatternsCount = patterns.count();
+	data.initialPatterns = patterns;
+	data.reg.Init(nMaxPatternLength);
+	for (idx = 0; idx < patterns.count(); idx++) {
+		data.patterns.append(data.reg.ConvertPattern(patterns[idx]));
+	}
+	data.dwBits = 0;
+
+	return data;
+}
+
+void CFsmTest::CRegisterSearch::FillStatistics(const CFsmTest::CRegisterSearch::TSearchData &data, CFsmTest::SEnginePerformance *pPerformance) {
+	pPerformance->dwMemoryRequirements = data.reg.RequiredMemorySize();
+	pPerformance->dwStatesCount = -1; // for FSMs only
+}
+
+unsigned int CFsmTest::CRegisterSearch::ProcessByteCheckLength(const unsigned char bData, CFsmTest::CRegisterSearch::TSearchData *pSearchData) {
+	unsigned int cHits = 0;
+	int nBit;
+	for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {
+		// obtain next bit
+		unsigned char bBit = GetHiBit(bData, nBit);
+
+		// process bit with the register
+		pSearchData->reg.PushBit(bBit);
+		pSearchData->dwBits++;
+		unsigned int dwPatternIdx;
+		for (dwPatternIdx = 0; dwPatternIdx < pSearchData->dwPatternsCount; dwPatternIdx++) {
+			if (pSearchData->reg.TestPattern(pSearchData->patterns[dwPatternIdx])) {
+				unsigned int dwPatternLength = pSearchData->initialPatterns[dwPatternIdx].nLength;
+				if (dwPatternLength <= pSearchData->dwBits) { // register is full
+					cHits++;
+				}
+			}
+		}
+	}
+
+	return cHits;
+}
+
+unsigned int CFsmTest::CRegisterSearch::ProcessByte(const unsigned char bData, CFsmTest::CRegisterSearch::TSearchData *pSearchData) {
+	unsigned int cHits = 0;
+	int nBit;
+	for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {
+		// obtain next bit
+		unsigned char bBit = GetHiBit(bData, nBit);
+
+		// process bit with the register
+		pSearchData->reg.PushBit(bBit);
+		unsigned int dwPatternIdx;
+		for (dwPatternIdx = 0; dwPatternIdx < pSearchData->dwPatternsCount; dwPatternIdx++) {
+			if (pSearchData->reg.TestPattern(pSearchData->patterns[dwPatternIdx])) {
+				cHits++;
+			}
+		}
+	}
+
+	return cHits;
 }
