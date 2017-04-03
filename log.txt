@@ -383,3 +383,7 @@ Engine test statistics refactoring
 Реализовал заполнение новой статистики в структуру SEnginePerformance в шаблонном методе
 тестирования.
 Стало красивее и логичнее.
+-
+Refactoring: CBitFsmSearch::TSearchData::fsm renamed to wrap
+Переименовал член fsm в wrap.
+Стало меньше путаницы.
