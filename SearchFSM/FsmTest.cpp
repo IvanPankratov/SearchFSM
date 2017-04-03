@@ -853,6 +853,88 @@ bool CFsmTest::IsEqual(const TSearchFsm::SOutput &output1, const TSearchFsm::SOu
 // Search engine classes
 //////////////////////////////////////////////////////////////////////////////
 
+/// CFsmTest::CBitFsmSearch - search with a bit SearchFSM
+class CFsmTest::CBitFsmSearch {
+public: // data
+	struct TSearchData {
+		CFsmCreator::SFsmWrap<TSearchFsm> wrap;
+		unsigned int dwBits;
+	};
+
+public: // initialization & statictics
+	static TSearchData InitEngine(const TPatterns& patterns);
+	static unsigned int GetMemoryRequirements(const TSearchData &data);
+	static bool IsFsm() {return true;}
+	static CFsmTest::SFsmStatistics GetFsmStatistics(const TSearchData &data);
+
+public: // working methods
+	static unsigned int ProcessByteCheckLength(const unsigned char bData, TSearchData *pSearchData);
+	static unsigned int ProcessByte(const unsigned char bData, TSearchData *pSearchData);
+};
+
+CFsmTest::CBitFsmSearch::TSearchData CFsmTest::CBitFsmSearch::InitEngine(const TPatterns &patterns) {
+	CFsmCreator fsm(patterns);
+	fsm.GenerateTables();
+	TSearchData data = {fsm.CreateFsmWrap<TSearchFsm>(), 0};
+	data.wrap.fsm.Reset();
+
+	return data;
+}
+
+unsigned int CFsmTest::CBitFsmSearch::GetMemoryRequirements(const CFsmTest::CBitFsmSearch::TSearchData &data) {
+	return CFsmTest::GetTableSize(data.wrap).dwTotalSize;
+}
+
+CFsmTest::SFsmStatistics CFsmTest::CBitFsmSearch::GetFsmStatistics(const CFsmTest::CBitFsmSearch::TSearchData &data) {
+	CFsmTest::SFsmStatistics stats;
+	stats.dwStatesCount = data.wrap.m_rows.count();
+	stats.tableSize = CFsmTest::GetTableSize(data.wrap);
+	stats.tableMinSize = CFsmTest::GetMinimalTableSize(data.wrap);
+
+	return stats;
+}
+
+unsigned int CFsmTest::CBitFsmSearch::ProcessByteCheckLength(const unsigned char bData, CFsmTest::CBitFsmSearch::TSearchData *pSearchData) {
+	unsigned int cHits = 0;
+	int nBit;
+	for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {
+		// obtain next bit
+		unsigned char bBit = GetHiBit(bData, nBit);
+
+		// process bit by FSM
+		unsigned int dwOut = pSearchData->wrap.fsm.PushBit(bBit);
+		pSearchData->dwBits++;
+		while (dwOut != TSearchFsm::sm_outputNull) {
+			const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
+			if (out.stepBack <= pSearchData->dwBits) { // enough data
+				cHits++;
+			}
+			dwOut = out.idxNextOutput;
+		}
+	}
+
+	return cHits;
+}
+
+unsigned int CFsmTest::CBitFsmSearch::ProcessByte(const unsigned char bData, CFsmTest::CBitFsmSearch::TSearchData *pSearchData) {
+	unsigned int cHits = 0;
+	int nBit;
+	for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {
+		// obtain next bit
+		unsigned char bBit = GetHiBit(bData, nBit);
+
+		// process bit by FSM
+		unsigned int dwOut = pSearchData->wrap.fsm.PushBit(bBit);
+		while (dwOut != TSearchFsm::sm_outputNull) {
+			cHits++;
+			const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
+			dwOut = out.idxNextOutput;
+		}
+	}
+
+	return cHits;
+}
+
 /// CFsmTest::CRegisterSearch - simple search with a shift register
 class CFsmTest::CRegisterSearch {
 public: // data
@@ -941,88 +1023,6 @@ unsigned int CFsmTest::CRegisterSearch::ProcessByte(const unsigned char bData, C
 			if (pSearchData->reg.TestPattern(pSearchData->patterns[dwPatternIdx])) {
 				cHits++;
 			}
-		}
-	}
-
-	return cHits;
-}
-
-/// CFsmTest::CBitFsmSearch - search with a bit SearchFSM
-class CFsmTest::CBitFsmSearch {
-public: // data
-	struct TSearchData {
-		CFsmCreator::SFsmWrap<TSearchFsm> wrap;
-		unsigned int dwBits;
-	};
-
-public: // initialization & statictics
-	static TSearchData InitEngine(const TPatterns& patterns);
-	static unsigned int GetMemoryRequirements(const TSearchData &data);
-	static bool IsFsm() {return true;}
-	static CFsmTest::SFsmStatistics GetFsmStatistics(const TSearchData &data);
-
-public: // working methods
-	static unsigned int ProcessByteCheckLength(const unsigned char bData, TSearchData *pSearchData);
-	static unsigned int ProcessByte(const unsigned char bData, TSearchData *pSearchData);
-};
-
-CFsmTest::CBitFsmSearch::TSearchData CFsmTest::CBitFsmSearch::InitEngine(const TPatterns &patterns) {
-	CFsmCreator fsm(patterns);
-	fsm.GenerateTables();
-	TSearchData data = {fsm.CreateFsmWrap<TSearchFsm>(), 0};
-	data.wrap.fsm.Reset();
-
-	return data;
-}
-
-unsigned int CFsmTest::CBitFsmSearch::GetMemoryRequirements(const CFsmTest::CBitFsmSearch::TSearchData &data) {
-	return CFsmTest::GetTableSize(data.wrap).dwTotalSize;
-}
-
-CFsmTest::SFsmStatistics CFsmTest::CBitFsmSearch::GetFsmStatistics(const CFsmTest::CBitFsmSearch::TSearchData &data) {
-	CFsmTest::SFsmStatistics stats;
-	stats.dwStatesCount = data.wrap.m_rows.count();
-	stats.tableSize = CFsmTest::GetTableSize(data.wrap);
-	stats.tableMinSize = CFsmTest::GetMinimalTableSize(data.wrap);
-
-	return stats;
-}
-
-unsigned int CFsmTest::CBitFsmSearch::ProcessByteCheckLength(const unsigned char bData, CFsmTest::CBitFsmSearch::TSearchData *pSearchData) {
-	unsigned int cHits = 0;
-	int nBit;
-	for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {
-		// obtain next bit
-		unsigned char bBit = GetHiBit(bData, nBit);
-
-		// process bit by FSM
-		unsigned int dwOut = pSearchData->wrap.fsm.PushBit(bBit);
-		pSearchData->dwBits++;
-		while (dwOut != TSearchFsm::sm_outputNull) {
-			const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
-			if (out.stepBack <= pSearchData->dwBits) { // enough data
-				cHits++;
-			}
-			dwOut = out.idxNextOutput;
-		}
-	}
-
-	return cHits;
-}
-
-unsigned int CFsmTest::CBitFsmSearch::ProcessByte(const unsigned char bData, CFsmTest::CBitFsmSearch::TSearchData *pSearchData) {
-	unsigned int cHits = 0;
-	int nBit;
-	for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {
-		// obtain next bit
-		unsigned char bBit = GetHiBit(bData, nBit);
-
-		// process bit by FSM
-		unsigned int dwOut = pSearchData->wrap.fsm.PushBit(bBit);
-		while (dwOut != TSearchFsm::sm_outputNull) {
-			cHits++;
-			const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
-			dwOut = out.idxNextOutput;
 		}
 	}
 

@@ -387,3 +387,7 @@ Engine test statistics refactoring
 Refactoring: CBitFsmSearch::TSearchData::fsm renamed to wrap
 Переименовал член fsm в wrap.
 Стало меньше путаницы.
+-
+Refactoring: class order
+Поменял классы CFsmTest::CRegisterSearch и CFsmTest::CBitFsmSearch местами в соответствии
+с порядком объявления в заголовочном файле.
