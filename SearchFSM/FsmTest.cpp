@@ -519,17 +519,17 @@ void CFsmTest::ReleaseFsm() {
 }
 
 // table size quering methods
-CFsmTest::STableSize CFsmTest::GetTableSize() const {
-	STableSize size;
-	size.dwFsmTableSize = m_rows.count() * sizeof(TFsmTable::value_type);
+CFsmTest::SFsmTableSize CFsmTest::GetTableSize() const {
+	SFsmTableSize size;
+	size.dwMainTableSize = m_rows.count() * sizeof(TFsmTable::value_type);
 	size.dwOutputTableSize = m_dwFsmOutputsCount * sizeof(TOutputTable::value_type);
-	size.dwTotalSize = size.dwFsmTableSize + size.dwOutputTableSize + sizeof(TSearchFsm::STable);
+	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(TSearchFsm::STable);
 
 	return size;
 }
 
-CFsmTest::STableSize CFsmTest::GetMinimalTableSize() const {
-	STableSize size;
+CFsmTest::SFsmTableSize CFsmTest::GetMinimalTableSize() const {
+	SFsmTableSize size;
 
 //	struct STableCell {
 //		TStateIdx idxNextState;
@@ -541,7 +541,7 @@ CFsmTest::STableSize CFsmTest::GetMinimalTableSize() const {
 	// table cell contains next state index and output index, and
 	unsigned int dwTableCellSize = dwStateIndexSize + dwOutputIndexSize;
 	unsigned int dwRowSize = dwTableCellSize * 2;
-	size.dwFsmTableSize = m_rows.count() * dwRowSize;
+	size.dwMainTableSize = m_rows.count() * dwRowSize;
 
 //	struct SOutput {
 //		TPatternIdx patternIdx;
@@ -555,25 +555,25 @@ CFsmTest::STableSize CFsmTest::GetMinimalTableSize() const {
 	unsigned int dwOutputCellSize = dwPatternIdxSize + dwStepBackSize + dwErrorsSize + dwOutputIndexSize;
 
 	size.dwOutputTableSize = m_dwFsmOutputsCount * dwOutputCellSize;
-	size.dwTotalSize = size.dwFsmTableSize + size.dwOutputTableSize + sizeof(TSearchFsm::STable);
+	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(TSearchFsm::STable);
 
 	return size;
 }
 
-CFsmTest::STableSize CFsmTest::GetNibbleTableSize() const {
-	STableSize size;
-	size.dwFsmTableSize = m_rowsNibble.count() * sizeof(TFsmNibbleTable::value_type);
+CFsmTest::SFsmTableSize CFsmTest::GetNibbleTableSize() const {
+	SFsmTableSize size;
+	size.dwMainTableSize = m_rowsNibble.count() * sizeof(TFsmNibbleTable::value_type);
 	size.dwOutputTableSize = m_dwFsmNibbleOutputsCount * sizeof(TOutputTable::value_type);
-	size.dwTotalSize = size.dwFsmTableSize + size.dwOutputTableSize + sizeof(TSearchFsmNibble::STable);
+	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(TSearchFsmNibble::STable);
 
 	return size;
 }
 
-CFsmTest::STableSize CFsmTest::GetByteTableSize() const {
-	STableSize size;
-	size.dwFsmTableSize = m_rowsByte.count() * sizeof(TFsmByteTable::value_type);
+CFsmTest::SFsmTableSize CFsmTest::GetByteTableSize() const {
+	SFsmTableSize size;
+	size.dwMainTableSize = m_rowsByte.count() * sizeof(TFsmByteTable::value_type);
 	size.dwOutputTableSize = m_outputs.count() * sizeof(TOutputTable::value_type);
-	size.dwTotalSize = size.dwFsmTableSize + size.dwOutputTableSize + sizeof(TSearchFsmByte::STable);
+	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(TSearchFsmByte::STable);
 
 	return size;
 }
@@ -906,10 +906,10 @@ CFsmTest::CBitFsmSearch::TSearchData CFsmTest::CBitFsmSearch::InitEngine(const T
 
 	// store statistics
 	unsigned int dwStatesCount = fsm.GetStatesCount();
-	STableSize size;
-	size.dwFsmTableSize = dwStatesCount * sizeof(TSearchFsm::STableRow);
+	SFsmTableSize size;
+	size.dwMainTableSize = dwStatesCount * sizeof(TSearchFsm::STableRow);
 	size.dwOutputTableSize = data.fsm.m_outputTable.count() * sizeof(TSearchFsm::SOutput);
-	size.dwTotalSize = size.dwFsmTableSize + size.dwOutputTableSize + sizeof(TSearchFsm::STable);
+	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(TSearchFsm::STable);
 	data.dwMemoryRequirements = size.dwTotalSize;
 	data.dwStatesCount = dwStatesCount;
 	data.fsm.fsm.Reset();

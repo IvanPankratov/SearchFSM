@@ -56,8 +56,8 @@ QString DataSizeToString(unsigned int dwSize) {
 	}
 }
 
-void PrintTableSize(const CFsmTest::STableSize &size) {
-	Print(QString("FSM table: %1\n").arg(DataSizeToString(size.dwFsmTableSize)));
+void PrintTableSize(const CFsmTest::SFsmTableSize &size) {
+	Print(QString("FSM table: %1\n").arg(DataSizeToString(size.dwMainTableSize)));
 	Print(QString("Output table: %1\n").arg(DataSizeToString(size.dwOutputTableSize)));
 	Print(QString("Total size: %1\n").arg(DataSizeToString(size.dwTotalSize)));
 }
@@ -67,7 +67,7 @@ void PrintFsmStats(const CFsmTest &fsm) {
 	unsigned int dwOutputCellsCount = fsm.GetOutputElementsCount();
 	Print(QString("\nFSM with %1 states, %2 output elements.\n").arg(dwStatesCount).arg(dwOutputCellsCount));
 
-	CFsmTest::STableSize size = fsm.GetTableSize();
+	CFsmTest::SFsmTableSize size = fsm.GetTableSize();
 	printf("\nDefault FSM memory requirements:\n");
 	PrintTableSize(size);
 

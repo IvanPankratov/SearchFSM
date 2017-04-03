@@ -36,13 +36,25 @@ public:
 		long double dKernelTime;
 	};
 
+	struct SFsmTableSize {
+		unsigned int dwTotalSize;
+		unsigned int dwMainTableSize;
+		unsigned int dwOutputTableSize;
+	};
+
 	struct SEnginePerformance {
 		STimeings timInitialization;
 		STimeings timOperating;
 		unsigned int dwBytesCount; // overall bytes processed
-		unsigned int dwMemoryRequirements; // total memory requirements
-		unsigned int dwStatesCount; // for FSMs only
 		unsigned int dwHits;
+
+		// memory requirements and other statistics
+		unsigned int dwMemoryRequirements; // total memory requirements
+		bool fIsFsm; // true for FSMs
+		// for FSMs only
+		SFsmTableSize tableSize;
+		SFsmTableSize tableMinSize;
+		unsigned int dwStatesCount;
 
 		// obsolete
 		long double dRate; // bytes per second
@@ -59,6 +71,7 @@ public:
 	unsigned int GetCollisionsCount() const;
 	bool TraceFsm(int nDataLength);
 	bool TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, /* out, optional */ unsigned int *pdwHits = NULL);
+
 	// rate is measured in bytes per second
 	SEnginePerformance TestFsmRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
 	bool TestFsmRate2(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
@@ -69,18 +82,12 @@ public:
 	void ReleaseFsm();
 
 public: // table size quering methods
-	struct STableSize {
-		unsigned int dwTotalSize;
-		unsigned int dwFsmTableSize;
-		unsigned int dwOutputTableSize;
-	};
-
 	unsigned int GetStatesCount() const {return m_rows.count();}
 	unsigned int GetOutputElementsCount() const {return m_dwFsmOutputsCount;}
-	STableSize GetTableSize() const;
-	STableSize GetMinimalTableSize() const; // using the shortest integral types
-	STableSize GetNibbleTableSize() const;
-	STableSize GetByteTableSize() const;
+	SFsmTableSize GetTableSize() const;
+	SFsmTableSize GetMinimalTableSize() const; // using the shortest integral types
+	SFsmTableSize GetNibbleTableSize() const;
+	SFsmTableSize GetByteTableSize() const;
 
 private:
 	static unsigned int GetMinimalDataSize(unsigned int nMaxValue);

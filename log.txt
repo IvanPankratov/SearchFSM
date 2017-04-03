@@ -367,3 +367,7 @@ Changed interface of TestFsmRate2 and TestRegisterRate2
 Переделал интерфейс методов TestFsmRate2 и TestRegisterRate2 в соответствии с интерфейсом
 шаблонного метода TestEngine.
 Теперь в клиенте результаты выводятся только при успешном вызове методов.
+-
+Rename STableSize to SFsmTableSize, etc
+Переименовал структуру STableSize в SFsmTableSize, перенёс её выше - для использования в структуре
+SEnginePerformance, переименовал некоторые поля.
