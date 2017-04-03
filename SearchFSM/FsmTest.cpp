@@ -361,10 +361,8 @@ CFsmTest::SEnginePerformance CFsmTest::TestFsmRate(unsigned int dwTestBytesCount
 	return speed;
 }
 
-CFsmTest::SEnginePerformance CFsmTest::TestFsmRate2(unsigned int dwTestBytesCount) {
-	SEnginePerformance performance;
-	TestEngine<CBitFsmSearch>(dwTestBytesCount, &performance);
-	return performance;
+bool CFsmTest::TestFsmRate2(unsigned int dwTestBytesCount, CFsmTest::SEnginePerformance *pResult) {
+	return TestEngine<CBitFsmSearch>(dwTestBytesCount, pResult);
 }
 
 CFsmTest::SEnginePerformance CFsmTest::TestFsmNibbleRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
@@ -499,10 +497,8 @@ CFsmTest::SEnginePerformance CFsmTest::TestRegisterRate(unsigned int dwTestBytes
 	return speed;
 }
 
-CFsmTest::SEnginePerformance CFsmTest::TestRegisterRate2(unsigned int dwTestBytesCount) {
-	SEnginePerformance performance;
-	TestEngine<CRegisterSearch>(dwTestBytesCount, &performance);
-	return performance;
+bool CFsmTest::TestRegisterRate2(unsigned int dwTestBytesCount, CFsmTest::SEnginePerformance *pResult) {
+	return TestEngine<CRegisterSearch>(dwTestBytesCount, pResult);
 }
 
 void CFsmTest::ReleaseFsm() {

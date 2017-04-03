@@ -134,9 +134,10 @@ STestResult TestSpeed(const TPatterns patterns) {
 	long double dFsmRate = performance.dRate;
 	printf("FSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", dFsmRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, dwHits);
 
-	performance = tester.TestFsmRate2(g_nTestSpeedBytes);
-	printf("FSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", performance.dRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, performance.dwHits);
-	printf("%i states, %i memory, %Lg init-time\n", performance.dwStatesCount, performance.dwMemoryRequirements, performance.timInitialization.dTotalTime);
+	if (tester.TestFsmRate2(g_nTestSpeedBytes, &performance)) {
+		printf("FSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", performance.dRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, performance.dwHits);
+		printf("%i states, %i memory, %Lg init-time\n", performance.dwStatesCount, performance.dwMemoryRequirements, performance.timInitialization.dTotalTime);
+	}
 
 	performance = tester.TestFsmNibbleRate(g_nTestSpeedBytes, &dwHits);
 	long double dFsmNibbleRate = performance.dRate;
@@ -150,8 +151,9 @@ STestResult TestSpeed(const TPatterns patterns) {
 	long double dRegisterRate = performance.dRate;
 	printf("Register speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", dRegisterRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, dwHits);
 
-	performance = tester.TestRegisterRate2(g_nTestSpeedBytes);
-	printf("Register speed (pattern): %Lg MiB/s, %Lg, %Lg (found %i entries)\n", performance.dRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, performance.dwHits);
+	if (tester.TestRegisterRate2(g_nTestSpeedBytes, &performance)) {
+		printf("Register speed (pattern): %Lg MiB/s, %Lg, %Lg (found %i entries)\n", performance.dRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, performance.dwHits);
+	}
 
 	STestResult result;
 	result.nFsmStates = tester.GetStatesCount();

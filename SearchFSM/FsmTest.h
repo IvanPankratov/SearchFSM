@@ -61,11 +61,11 @@ public:
 	bool TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, /* out, optional */ unsigned int *pdwHits = NULL);
 	// rate is measured in bytes per second
 	SEnginePerformance TestFsmRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
-	SEnginePerformance TestFsmRate2(unsigned int dwTestBytesCount);
+	bool TestFsmRate2(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 	SEnginePerformance TestFsmNibbleRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
 	SEnginePerformance TestFsmByteRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
 	SEnginePerformance TestRegisterRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
-	SEnginePerformance TestRegisterRate2(unsigned int dwTestBytesCount);
+	bool TestRegisterRate2(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 	void ReleaseFsm();
 
 public: // table size quering methods
