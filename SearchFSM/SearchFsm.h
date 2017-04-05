@@ -45,6 +45,10 @@ public:
 		TOutputIdx outputsCount;
 	};
 
+	// typedef's for interoperability with byte SearchFSM
+	typedef SOutput TOutput;
+	typedef STableCell TTableCell;
+
 public: // constructor
 	CSearchFsm(const STable &table): m_table(table) {
 		Reset();
@@ -89,6 +93,7 @@ public:
 	typedef TOutputIdx_ TOutputIdx;
 
 	static const TOutputIdx sm_outputNull = (TOutputIdx)(-1);
+	static const int g_nBitsAtOnce = nBitsAtOnce;
 	static const int g_nColumnsCount = (1 << nBitsAtOnce);
 	static const unsigned int g_dwByteMask = g_nColumnsCount - 1;
 

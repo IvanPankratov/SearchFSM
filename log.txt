@@ -391,3 +391,7 @@ Refactoring: CBitFsmSearch::TSearchData::fsm renamed to wrap
 Refactoring: class order
 Поменял классы CFsmTest::CRegisterSearch и CFsmTest::CBitFsmSearch местами в соответствии
 с порядком объявления в заголовочном файле.
+-
+CSearchFsm: added typedefs TOutput and TTableCell
+Для единообразия добавил в класс CSearchFsm типы TOutput и TTableCell, совпадающие
+с соответствующими структурами.
