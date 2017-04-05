@@ -78,7 +78,7 @@ public:
 	// rate is measured in bytes per second
 	SEnginePerformance TestFsmRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
 	bool TestFsmRate2(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
-	SEnginePerformance TestFsmNibbleRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
+	bool TestFsmNibbleRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 	SEnginePerformance TestFsmByteRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
 	SEnginePerformance TestRegisterRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
 	bool TestRegisterRate2(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
@@ -107,6 +107,7 @@ private:
 
 private:
 	class CBitFsmSearch;
+	class CNibbleFsmSearch;
 	class CRegisterSearch;
 
 	struct SFinding {

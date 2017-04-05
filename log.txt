@@ -402,3 +402,10 @@ Method CFsmCreator::SFsmWrap<TSearchFsm> to create byte SearchFSM on-the-fly
 автоматов "на лету".
 Попутно переделал использование TSearchFsm::SOutput на TOutput и TSearchFsm::STableCell на
 TTableCell в соответствии с изменениями в классах поисковых автоматов.
+-
+Class CNibbleFsmSearch for template tests of SearchFSM-4 (nibble SearchFSM)
+Сделал класс CNibbleFsmSearch для шаблонного тестирования скорости полубайтовых поисковых
+автоматов.
+Попутно изменил интерфейс самого метода тестирования на новый стандарт.
+В клиентском коде сделал более подробный вывод результата тестирования.
+Также перевёл использование идентификаторов SOutput и подобных на TOutput и подобные.

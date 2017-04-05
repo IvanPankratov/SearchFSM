@@ -365,50 +365,8 @@ bool CFsmTest::TestFsmRate2(unsigned int dwTestBytesCount, CFsmTest::SEnginePerf
 	return TestEngine<CBitFsmSearch>(dwTestBytesCount, pResult);
 }
 
-CFsmTest::SEnginePerformance CFsmTest::TestFsmNibbleRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
-	if (m_pFsmNibble == NULL) {
-		if (pdwHits != NULL) {
-			*pdwHits = 0;
-		}
-		SEnginePerformance performance = {0, 0, 0};
-		return performance;
-	}
-
-	m_pFsmNibble->Reset();
-	CLcg lcg;
-
-	// start test
-	CWinTimer timer;
-	unsigned int cHits = 0;
-	unsigned int dwByteIdx;
-	for (dwByteIdx = 0; dwByteIdx < dwTestBytesCount; dwByteIdx++) {
-		unsigned char bData = lcg.RandomByte();
-
-		// process the two nibbles of the byte
-		unsigned int dwOut = m_pFsmNibble->PushByte(HiNibble(bData));
-		while (dwOut != TSearchFsmNibble::sm_outputNull) {
-			cHits++;
-			const TSearchFsmNibble::TOutput &out = m_pFsmNibble->GetOutput(dwOut);
-			dwOut = out.idxNextOutput;
-		}
-		dwOut = m_pFsmNibble->PushByte(LoNibble(bData));
-		while (dwOut != TSearchFsmNibble::sm_outputNull) {
-			cHits++;
-			const TSearchFsmNibble::TOutput &out = m_pFsmNibble->GetOutput(dwOut);
-			dwOut = out.idxNextOutput;
-		}
-	}
-	timer.Stop();
-	CWinTimer::TTime tSeconds = timer.GetTotalDuration();
-	SEnginePerformance speed;
-	speed.dRate = dwTestBytesCount / tSeconds;
-	speed.dCpuUsage = timer.GetThreadDuration() / tSeconds;
-	speed.dCpuKernelUsage = timer.GetKernelDuration() / tSeconds;
-
-	if (pdwHits != NULL) {
-		*pdwHits = cHits;
-	}
-	return speed;
+bool CFsmTest::TestFsmNibbleRate(unsigned int dwTestBytesCount, CFsmTest::SEnginePerformance *pResult) {
+	return TestEngine<CNibbleFsmSearch>(dwTestBytesCount, pResult);
 }
 
 CFsmTest::SEnginePerformance CFsmTest::TestFsmByteRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
@@ -523,7 +481,7 @@ template <class TSearchFsm_>
 CFsmTest::SFsmTableSize CFsmTest::GetTableSize(const CFsmCreator::SFsmWrap<TSearchFsm_> &wrap) {
 	SFsmTableSize size;
 	size.dwMainTableSize = wrap.m_rows.count() * sizeof(typename TSearchFsm_::STableRow);
-	size.dwOutputTableSize = wrap.m_outputTable.count() * sizeof(typename TSearchFsm_::SOutput);
+	size.dwOutputTableSize = wrap.m_outputTable.count() * sizeof(typename TSearchFsm_::TOutput);
 	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(TSearchFsm_::STable);
 
 	return size;
@@ -556,7 +514,7 @@ CFsmTest::SFsmTableSize CFsmTest::GetMinimalTableSize(const CFsmCreator::SFsmWra
 	unsigned int dwMaxPatternIdx = 0, dwMaxStepBack = 0, dwMaxErrors = 0;
 	int idx;
 	for (idx = 0; idx < wrap.m_outputTable.count(); idx++) {
-		const typename TSearchFsm_::SOutput& out = wrap.m_outputTable[idx];
+		const typename TSearchFsm_::TOutput& out = wrap.m_outputTable[idx];
 		if (dwMaxPatternIdx < out.patternIdx) {
 			dwMaxPatternIdx = out.patternIdx;
 		}
@@ -934,6 +892,99 @@ unsigned int CFsmTest::CBitFsmSearch::ProcessByte(const unsigned char bData, CFs
 
 	return cHits;
 }
+
+
+/// CFsmTest::CNibbleFsmSearch - search with a 4-bit SearchFSM
+class CFsmTest::CNibbleFsmSearch {
+public: // data
+	struct TSearchData {
+		CFsmCreator::SFsmWrap<CFsmTest::TSearchFsmNibble> wrap;
+		unsigned int dwBits;
+	};
+
+public: // initialization & statictics
+	static TSearchData InitEngine(const TPatterns& patterns);
+	static unsigned int GetMemoryRequirements(const TSearchData &data);
+	static bool IsFsm() {return true;}
+	static CFsmTest::SFsmStatistics GetFsmStatistics(const TSearchData &data);
+
+public: // working methods
+	static unsigned int ProcessByteCheckLength(const unsigned char bData, TSearchData *pSearchData);
+	static unsigned int ProcessByte(const unsigned char bData, TSearchData *pSearchData);
+};
+
+CFsmTest::CNibbleFsmSearch::TSearchData CFsmTest::CNibbleFsmSearch::InitEngine(const TPatterns &patterns) {
+	CFsmCreator fsm(patterns);
+	fsm.GenerateTables();
+	TSearchData data = {fsm.CreateByteFsmWrap<TSearchFsmNibble>(), 0};
+	data.wrap.fsm.Reset();
+
+	return data;
+}
+
+unsigned int CFsmTest::CNibbleFsmSearch::GetMemoryRequirements(const CFsmTest::CNibbleFsmSearch::TSearchData &data) {
+	return CFsmTest::GetTableSize(data.wrap).dwTotalSize;
+}
+
+CFsmTest::SFsmStatistics CFsmTest::CNibbleFsmSearch::GetFsmStatistics(const CFsmTest::CNibbleFsmSearch::TSearchData &data) {
+	CFsmTest::SFsmStatistics stats;
+	stats.dwStatesCount = data.wrap.m_rows.count();
+	stats.tableSize = CFsmTest::GetTableSize(data.wrap);
+	stats.tableMinSize = CFsmTest::GetMinimalTableSize(data.wrap);
+
+	return stats;
+}
+
+unsigned int CFsmTest::CNibbleFsmSearch::ProcessByteCheckLength(const unsigned char bData, CFsmTest::CNibbleFsmSearch::TSearchData *pSearchData) {
+	// process the two nibbles of the byte
+	unsigned int cHits = 0;
+
+	// Higher nibble
+	unsigned int dwOut = pSearchData->wrap.fsm.PushByte(HiNibble(bData));
+	pSearchData->dwBits += g_nNibbleLength;
+	while (dwOut != TSearchFsmNibble::sm_outputNull) {
+		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
+		if (out.stepBack <= pSearchData->dwBits) { // enough data
+			cHits++;
+		}
+		dwOut = out.idxNextOutput;
+	}
+	// Lowwer nibble
+	dwOut = pSearchData->wrap.fsm.PushByte(LoNibble(bData));
+	pSearchData->dwBits += g_nNibbleLength;
+	while (dwOut != TSearchFsmNibble::sm_outputNull) {
+		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
+		if (out.stepBack <= pSearchData->dwBits) { // enough data
+			cHits++;
+		}
+		dwOut = out.idxNextOutput;
+	}
+
+	return cHits;
+}
+
+unsigned int CFsmTest::CNibbleFsmSearch::ProcessByte(const unsigned char bData, CFsmTest::CNibbleFsmSearch::TSearchData *pSearchData) {
+	// process the two nibbles of the byte
+	unsigned int cHits = 0;
+
+	// Higher nibble
+	unsigned int dwOut = pSearchData->wrap.fsm.PushByte(HiNibble(bData));
+	while (dwOut != TSearchFsmNibble::sm_outputNull) {
+		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
+		cHits++;
+		dwOut = out.idxNextOutput;
+	}
+	// Lowwer nibble
+	dwOut = pSearchData->wrap.fsm.PushByte(LoNibble(bData));
+	while (dwOut != TSearchFsmNibble::sm_outputNull) {
+		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
+		cHits++;
+		dwOut = out.idxNextOutput;
+	}
+
+	return cHits;
+}
+
 
 /// CFsmTest::CRegisterSearch - simple search with a shift register
 class CFsmTest::CRegisterSearch {
