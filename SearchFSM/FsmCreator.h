@@ -53,7 +53,7 @@ public:
 
 		// members for storing and releasing the tables
 		const QVector<typename TSearchFsm::STableRow> m_rows;
-		const QVector<typename TSearchFsm::SOutput> m_outputTable;
+		const QVector<typename TSearchFsm::TOutput> m_outputTable;
 	};
 
 public:
@@ -70,17 +70,20 @@ public:
 	template <class TSearchFsm>
 	SFsmWrap<TSearchFsm> CreateFsmWrap();
 
+	template <class TSearchFsm>
+	SFsmWrap<TSearchFsm> CreateByteFsmWrap(CFsmCreator::EBitOrder bitOrder = bitOrder_MsbFirst);
+
 private: // output table handling
 	template <class TSearchFsm>
 	static typename TSearchFsm::TOutputIdx StoreOutputList(const TOutputList &outputList,
-		/* in-out */ QVector<typename TSearchFsm::SOutput> *pOutputTable);
+		/* in-out */ QVector<typename TSearchFsm::TOutput> *pOutputTable);
 
 	template <class TSearchFsm>
-	static typename TSearchFsm::TOutputIdx StoreOutput(const typename TSearchFsm::SOutput &output,
-		/* in-out */ QVector<typename TSearchFsm::SOutput> *pOutputTable);
+	static typename TSearchFsm::TOutputIdx StoreOutput(const typename TSearchFsm::TOutput &output,
+		/* in-out */ QVector<typename TSearchFsm::TOutput> *pOutputTable);
 
 	template <class TSearchFsm>
-	static bool AreEqual(const typename TSearchFsm::SOutput &output1, const typename TSearchFsm::SOutput &output2);
+	static bool AreEqual(const typename TSearchFsm::TOutput &output1, const typename TSearchFsm::TOutput &output2);
 
 private:
 	struct SPrefix {
@@ -130,20 +133,49 @@ private:
 template<class TSearchFsm>
 CFsmCreator::SFsmWrap<TSearchFsm> CFsmCreator::CreateFsmWrap() {
 	QVector<typename TSearchFsm::STableRow> rows(GetStatesCount());
-	QVector<typename TSearchFsm::SOutput> outputs;
+	QVector<typename TSearchFsm::TOutput> outputs;
 	int nRow;
 	for (nRow = 0; nRow < GetStatesCount(); nRow++) {
 		const STableRow &row = GetTableRow(nRow);
-		typename TSearchFsm::STableCell cell0;
+		typename TSearchFsm::TTableCell cell0;
 		cell0.idxNextState = row.cell0.nNextState;
 		cell0.idxOutput = StoreOutputList<TSearchFsm>(row.cell0.output, &outputs);
 
-		typename TSearchFsm::STableCell cell1;
+		typename TSearchFsm::TTableCell cell1;
 		cell1.idxNextState = row.cell1.nNextState;
 		cell1.idxOutput = StoreOutputList<TSearchFsm>(row.cell1.output, &outputs);
 
-		typename TSearchFsm::STableRow fsmRow = {cell0, cell1};
+		typename TSearchFsm::STableRow fsmRow;
+		fsmRow.cell0 = cell0;
+		fsmRow.cell1 = cell1;
 		rows[nRow] = fsmRow;
+	}
+
+	// release redundant memory
+	outputs.squeeze();
+
+	// create the structure describing bit SearchFSM table
+	typename TSearchFsm::STable table = {rows.constData(), outputs.constData(),
+		(unsigned int)rows.count(), (unsigned int)outputs.count()};
+	SFsmWrap<TSearchFsm> fsm = {table, rows, outputs};
+	return fsm;
+}
+
+template<class TSearchFsm>
+CFsmCreator::SFsmWrap<TSearchFsm> CFsmCreator::CreateByteFsmWrap(CFsmCreator::EBitOrder bitOrder) {
+	QVector<typename TSearchFsm::STableRow> rows(GetStatesCount());
+	QVector<typename TSearchFsm::TOutput> outputs;
+
+	CFsmCreator::TByteTable fsmTable = CreateByteTable(TSearchFsm::g_nBitsAtOnce, bitOrder);
+	int nRow;
+	for (nRow = 0; nRow < GetStatesCount(); nRow++) {
+		const CFsmCreator::SByteTableRow &row = fsmTable.rows[nRow];
+		int nColumn;
+		for (nColumn = 0; nColumn < row.cells.count(); nColumn++) {
+			STableCell &cell = fsmTable.rows[nRow].cells[nColumn];
+			rows[nRow].cells[nColumn].idxNextState = cell.nNextState;
+			rows[nRow].cells[nColumn].idxOutput = StoreOutputList<TSearchFsm>(cell.output, &outputs);
+		}
 	}
 
 	// release redundant memory
@@ -159,7 +191,7 @@ CFsmCreator::SFsmWrap<TSearchFsm> CFsmCreator::CreateFsmWrap() {
 // output table handling
 template<class TSearchFsm>
 typename TSearchFsm::TOutputIdx CFsmCreator::StoreOutputList(const TOutputList &outputList,
-	QVector<typename TSearchFsm::SOutput> *pOutputTable)
+	QVector<typename TSearchFsm::TOutput> *pOutputTable)
 {
 	if (outputList.isEmpty()) {
 		return TSearchFsm::sm_outputNull;
@@ -169,7 +201,7 @@ typename TSearchFsm::TOutputIdx CFsmCreator::StoreOutputList(const TOutputList &
 	typename TSearchFsm::TOutputIdx idxNext = TSearchFsm::sm_outputNull;
 	for (idx = outputList.count() - 1; idx >= 0; idx--) {
 		CFsmCreator::SOutput out = outputList[idx];
-		typename TSearchFsm::SOutput outputNew;
+		typename TSearchFsm::TOutput outputNew;
 		outputNew.patternIdx = out.nPatternIdx;
 		outputNew.errorsCount = out.nErrors;
 		outputNew.stepBack = out.nStepBack;
@@ -181,8 +213,8 @@ typename TSearchFsm::TOutputIdx CFsmCreator::StoreOutputList(const TOutputList &
 }
 
 template<class TSearchFsm>
-typename TSearchFsm::TOutputIdx CFsmCreator::StoreOutput(const typename TSearchFsm::SOutput &output,
-	QVector<typename TSearchFsm::SOutput> *pOutputTable)
+typename TSearchFsm::TOutputIdx CFsmCreator::StoreOutput(const typename TSearchFsm::TOutput &output,
+	QVector<typename TSearchFsm::TOutput> *pOutputTable)
 {
 	int idx;
 	for (idx = 0; idx < pOutputTable->count(); idx++) {
@@ -196,7 +228,7 @@ typename TSearchFsm::TOutputIdx CFsmCreator::StoreOutput(const typename TSearchF
 }
 
 template<class TSearchFsm>
-bool CFsmCreator::AreEqual(const typename TSearchFsm::SOutput &output1, const typename TSearchFsm::SOutput &output2) {
+bool CFsmCreator::AreEqual(const typename TSearchFsm::TOutput &output1, const typename TSearchFsm::TOutput &output2) {
 	return (output1.patternIdx == output2.patternIdx) && (output1.errorsCount == output2.errorsCount) &&
 		(output1.stepBack == output2.stepBack) && (output1.idxNextOutput == output2.idxNextOutput);
 }

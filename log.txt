@@ -395,3 +395,10 @@ Refactoring: class order
 CSearchFsm: added typedefs TOutput and TTableCell
 Для единообразия добавил в класс CSearchFsm типы TOutput и TTableCell, совпадающие
 с соответствующими структурами.
+
+05.04.2017
+Method CFsmCreator::SFsmWrap<TSearchFsm> to create byte SearchFSM on-the-fly
+Добавил шаблонный метод CFsmCreator::SFsmWrap<TSearchFsm> для создания рабочих байтовых поисковых
+автоматов "на лету".
+Попутно переделал использование TSearchFsm::SOutput на TOutput и TSearchFsm::STableCell на
+TTableCell в соответствии с изменениями в классах поисковых автоматов.
