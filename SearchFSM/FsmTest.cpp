@@ -409,6 +409,10 @@ CFsmTest::SEnginePerformance CFsmTest::TestFsmByteRate(unsigned int dwTestBytesC
 	return speed;
 }
 
+bool CFsmTest::TestOctetFsmRate(unsigned int dwTestBytesCount, CFsmTest::SEnginePerformance *pResult) {
+	return TestEngine<COctetFsmSearch>(dwTestBytesCount, pResult);
+}
+
 CFsmTest::SEnginePerformance CFsmTest::TestRegisterRate(unsigned int dwTestBytesCount, unsigned int *pdwHits) {
 	// prepare shift register and test patterns
 	CShiftRegister testRegister(m_nMaxPatternLength);
@@ -976,6 +980,77 @@ unsigned int CFsmTest::CNibbleFsmSearch::ProcessByte(const unsigned char bData, 
 	}
 	// Lowwer nibble
 	dwOut = pSearchData->wrap.fsm.PushByte(LoNibble(bData));
+	while (dwOut != TSearchFsmNibble::sm_outputNull) {
+		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
+		cHits++;
+		dwOut = out.idxNextOutput;
+	}
+
+	return cHits;
+}
+
+
+/// CFsmTest::COctetFsmSearch - search with a 8-bit SearchFSM
+class CFsmTest::COctetFsmSearch {
+public: // data
+	struct TSearchData {
+		CFsmCreator::SFsmWrap<CFsmTest::TSearchFsmByte> wrap;
+		unsigned int dwBits;
+	};
+
+public: // initialization & statictics
+	static TSearchData InitEngine(const TPatterns& patterns);
+	static unsigned int GetMemoryRequirements(const TSearchData &data);
+	static bool IsFsm() {return true;}
+	static CFsmTest::SFsmStatistics GetFsmStatistics(const TSearchData &data);
+
+public: // working methods
+	static unsigned int ProcessByteCheckLength(const unsigned char bData, TSearchData *pSearchData);
+	static unsigned int ProcessByte(const unsigned char bData, TSearchData *pSearchData);
+};
+
+CFsmTest::COctetFsmSearch::TSearchData CFsmTest::COctetFsmSearch::InitEngine(const TPatterns &patterns) {
+	CFsmCreator fsm(patterns);
+	fsm.GenerateTables();
+	TSearchData data = {fsm.CreateByteFsmWrap<TSearchFsmByte>(), 0};
+	data.wrap.fsm.Reset();
+
+	return data;
+}
+
+unsigned int CFsmTest::COctetFsmSearch::GetMemoryRequirements(const CFsmTest::COctetFsmSearch::TSearchData &data) {
+	return CFsmTest::GetTableSize(data.wrap).dwTotalSize;
+}
+
+CFsmTest::SFsmStatistics CFsmTest::COctetFsmSearch::GetFsmStatistics(const CFsmTest::COctetFsmSearch::TSearchData &data) {
+	CFsmTest::SFsmStatistics stats;
+	stats.dwStatesCount = data.wrap.m_rows.count();
+	stats.tableSize = CFsmTest::GetTableSize(data.wrap);
+	stats.tableMinSize = CFsmTest::GetMinimalTableSize(data.wrap);
+
+	return stats;
+}
+
+unsigned int CFsmTest::COctetFsmSearch::ProcessByteCheckLength(const unsigned char bData, CFsmTest::COctetFsmSearch::TSearchData *pSearchData) {
+	// process the byte at once
+	unsigned int cHits = 0;
+	unsigned int dwOut = pSearchData->wrap.fsm.PushByte(bData);
+	pSearchData->dwBits += g_nByteLength;
+	while (dwOut != TSearchFsmNibble::sm_outputNull) {
+		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
+		if (out.stepBack <= pSearchData->dwBits) { // enough data
+			cHits++;
+		}
+		dwOut = out.idxNextOutput;
+	}
+
+	return cHits;
+}
+
+unsigned int CFsmTest::COctetFsmSearch::ProcessByte(const unsigned char bData, CFsmTest::COctetFsmSearch::TSearchData *pSearchData) {
+	// process the byte at once
+	unsigned int cHits = 0;
+	unsigned int dwOut = pSearchData->wrap.fsm.PushByte(bData);
 	while (dwOut != TSearchFsmNibble::sm_outputNull) {
 		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 		cHits++;

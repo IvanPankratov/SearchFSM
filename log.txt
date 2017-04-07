@@ -409,3 +409,7 @@ Class CNibbleFsmSearch for template tests of SearchFSM-4 (nibble SearchFSM)
 Попутно изменил интерфейс самого метода тестирования на новый стандарт.
 В клиентском коде сделал более подробный вывод результата тестирования.
 Также перевёл использование идентификаторов SOutput и подобных на TOutput и подобные.
+-
+Class COctetFsmSearch for template tests of SearchFSM-8 (octet SearchFSM)
+Добавил класс COctetFsmSearch для тестирования восьмибитового поискового автомата.
+Добавил его в клиента (main.cpp).

@@ -152,6 +152,12 @@ STestResult TestSpeed(const TPatterns patterns) {
 	long double dFsmByteRate = performance.dRate;
 	printf("Byte SearchFSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", dFsmByteRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, dwHits);
 
+	if (tester.TestOctetFsmRate(g_nTestSpeedBytes, &performance)) {
+		printf("Octet SearchFSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", performance.dRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, performance.dwHits);
+		printf("%i states, %i (%i) memory, %Lg init-time\n", performance.fsmStatistics.dwStatesCount, performance.dwMemoryRequirements,
+			performance.fsmStatistics.tableMinSize.dwTotalSize, performance.timInitialization.dTotalTime);
+	}
+
 	performance = tester.TestRegisterRate(g_nTestSpeedBytes, &dwHits);
 	long double dRegisterRate = performance.dRate;
 	printf("Register speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", dRegisterRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, dwHits);
