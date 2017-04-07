@@ -134,14 +134,14 @@ STestResult TestSpeed(const TPatterns patterns) {
 	long double dFsmRate = performance.dRate;
 	printf("FSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", dFsmRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, dwHits);
 
-	if (tester.TestFsmRate2(g_nTestSpeedBytes, &performance)) {
+	if (tester.TestBitFsmRate(g_nTestSpeedBytes, &performance)) {
 		printf("FSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", performance.dRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, performance.dwHits);
 		printf("%i states, %i (%i) memory, %Lg init-time\n", performance.fsmStatistics.dwStatesCount, performance.dwMemoryRequirements,
 			performance.fsmStatistics.tableMinSize.dwTotalSize, performance.timInitialization.dTotalTime);
 	}
 
 	long double dFsmNibbleRate = -1;
-	if (tester.TestFsmNibbleRate(g_nTestSpeedBytes, &performance)) {
+	if (tester.TestNibbleFsmRate(g_nTestSpeedBytes, &performance)) {
 		dFsmNibbleRate = performance.dRate;
 		printf("Nibble SearchFSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", dFsmNibbleRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, performance.dwHits);
 		printf("%i states, %i (%i) memory, %Lg init-time\n", performance.fsmStatistics.dwStatesCount, performance.dwMemoryRequirements,

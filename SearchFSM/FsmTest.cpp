@@ -111,7 +111,7 @@ bool CFsmTest::CreateFsm(const TPatterns &patterns, bool fCreateNibbleFsm, bool 
 	m_dwCollisions = fsm.GetCollisionsCount();
 
 	// convert tables to format acceptable by SearchFSMs
-	TFsmTable rows(fsm.GetStatesCount());
+	TBitFsmTable rows(fsm.GetStatesCount());
 	TOutputTable outputs;
 	int nRow;
 	for (nRow = 0; nRow < fsm.GetStatesCount(); nRow++) {
@@ -134,7 +134,7 @@ bool CFsmTest::CreateFsm(const TPatterns &patterns, bool fCreateNibbleFsm, bool 
 	m_dwFsmOutputsCount = outputs.count();
 
 	// create nibble SearchFSM
-	TFsmNibbleTable rowsNibble;
+	TNibbleFsmTable rowsNibble;
 	if (fCreateNibbleFsm) {
 		rowsNibble.resize(fsm.GetStatesCount());
 		CFsmCreator::TByteTable fsmNibble = fsm.CreateByteTable(g_nNibbleLength);
@@ -152,7 +152,7 @@ bool CFsmTest::CreateFsm(const TPatterns &patterns, bool fCreateNibbleFsm, bool 
 	m_dwFsmNibbleOutputsCount = outputs.count();
 
 	// create byte SearchFSM
-	TFsmByteTable rowsByte;
+	TOctetFsmTable rowsByte;
 	if (fCreateByteFsm) {
 		rowsByte.resize(fsm.GetStatesCount());
 		CFsmCreator::TByteTable fsmByte = fsm.CreateByteTable(g_nByteLength);
@@ -173,9 +173,9 @@ bool CFsmTest::CreateFsm(const TPatterns &patterns, bool fCreateNibbleFsm, bool 
 	outputs.squeeze();
 
 	// store the tables (with const_cast to disable write-protection)
-	const_cast<TFsmTable&>(m_rows) = rows;
-	const_cast<TFsmNibbleTable&>(m_rowsNibble) = rowsNibble;
-	const_cast<TFsmByteTable&>(m_rowsByte) = rowsByte;
+	const_cast<TBitFsmTable&>(m_rows) = rows;
+	const_cast<TNibbleFsmTable&>(m_rowsNibble) = rowsNibble;
+	const_cast<TOctetFsmTable&>(m_rowsByte) = rowsByte;
 	const_cast<TOutputTable&>(m_outputs) = outputs;
 
 	// create the structure describing bit SearchFSM table
@@ -186,12 +186,12 @@ bool CFsmTest::CreateFsm(const TPatterns &patterns, bool fCreateNibbleFsm, bool 
 
 	// the same for Nibble SearchFSM and byte SearchFSM if requested
 	if (fCreateNibbleFsm) {
-		TSearchFsmNibble::STable tableNibble = {m_rowsNibble.constData(), m_outputs.constData(), dwRows, m_dwFsmNibbleOutputsCount};
-		m_pFsmNibble = new TSearchFsmNibble(tableNibble);
+		TNibbleSearchFsm::STable tableNibble = {m_rowsNibble.constData(), m_outputs.constData(), dwRows, m_dwFsmNibbleOutputsCount};
+		m_pFsmNibble = new TNibbleSearchFsm(tableNibble);
 	}
 	if (fCreateByteFsm) {
-		TSearchFsmByte::STable tableByte = {m_rowsByte.constData(), m_outputs.constData(), dwRows, dwOutputs};
-		m_pFsmByte = new TSearchFsmByte(tableByte);
+		TOctetSearchFsm::STable tableByte = {m_rowsByte.constData(), m_outputs.constData(), dwRows, dwOutputs};
+		m_pFsmByte = new TOctetSearchFsm(tableByte);
 	}
 
 	return true;
@@ -361,11 +361,11 @@ CFsmTest::SEnginePerformance CFsmTest::TestFsmRate(unsigned int dwTestBytesCount
 	return speed;
 }
 
-bool CFsmTest::TestFsmRate2(unsigned int dwTestBytesCount, CFsmTest::SEnginePerformance *pResult) {
+bool CFsmTest::TestBitFsmRate(unsigned int dwTestBytesCount, CFsmTest::SEnginePerformance *pResult) {
 	return TestEngine<CBitFsmSearch>(dwTestBytesCount, pResult);
 }
 
-bool CFsmTest::TestFsmNibbleRate(unsigned int dwTestBytesCount, CFsmTest::SEnginePerformance *pResult) {
+bool CFsmTest::TestNibbleFsmRate(unsigned int dwTestBytesCount, CFsmTest::SEnginePerformance *pResult) {
 	return TestEngine<CNibbleFsmSearch>(dwTestBytesCount, pResult);
 }
 
@@ -374,7 +374,7 @@ CFsmTest::SEnginePerformance CFsmTest::TestFsmByteRate(unsigned int dwTestBytesC
 		if (pdwHits != NULL) {
 			*pdwHits = 0;
 		}
-		SEnginePerformance performance = {0, 0, 0};
+		SEnginePerformance performance = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 		return performance;
 	}
 
@@ -390,9 +390,9 @@ CFsmTest::SEnginePerformance CFsmTest::TestFsmByteRate(unsigned int dwTestBytesC
 
 		// process the two nibbles of the byte
 		unsigned int dwOut = m_pFsmByte->PushByte(bData);
-		while (dwOut != TSearchFsmByte::sm_outputNull) {
+		while (dwOut != TOctetSearchFsm::sm_outputNull) {
 			cHits++;
-			const TSearchFsmByte::TOutput &out = m_pFsmByte->GetOutput(dwOut);
+			const TOctetSearchFsm::TOutput &out = m_pFsmByte->GetOutput(dwOut);
 			dwOut = out.idxNextOutput;
 		}
 	}
@@ -486,7 +486,7 @@ CFsmTest::SFsmTableSize CFsmTest::GetTableSize(const CFsmCreator::SFsmWrap<TSear
 	SFsmTableSize size;
 	size.dwMainTableSize = wrap.m_rows.count() * sizeof(typename TSearchFsm_::STableRow);
 	size.dwOutputTableSize = wrap.m_outputTable.count() * sizeof(typename TSearchFsm_::TOutput);
-	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(TSearchFsm_::STable);
+	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(typename TSearchFsm_::STable);
 
 	return size;
 
@@ -535,7 +535,7 @@ CFsmTest::SFsmTableSize CFsmTest::GetMinimalTableSize(const CFsmCreator::SFsmWra
 	unsigned int dwOutputCellSize = dwPatternIdxSize + dwStepBackSize + dwErrorsSize + dwOutputIndexSize;
 
 	size.dwOutputTableSize = dwOutputsCount * dwOutputCellSize;
-	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(TSearchFsm_::STable);
+	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(typename TSearchFsm_::STable);
 
 	return size;
 }
@@ -543,7 +543,7 @@ CFsmTest::SFsmTableSize CFsmTest::GetMinimalTableSize(const CFsmCreator::SFsmWra
 // table size quering methods
 CFsmTest::SFsmTableSize CFsmTest::GetTableSize() const {
 	SFsmTableSize size;
-	size.dwMainTableSize = m_rows.count() * sizeof(TFsmTable::value_type);
+	size.dwMainTableSize = m_rows.count() * sizeof(TBitFsmTable::value_type);
 	size.dwOutputTableSize = m_dwFsmOutputsCount * sizeof(TOutputTable::value_type);
 	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(TSearchFsm::STable);
 
@@ -584,18 +584,18 @@ CFsmTest::SFsmTableSize CFsmTest::GetMinimalTableSize() const {
 
 CFsmTest::SFsmTableSize CFsmTest::GetNibbleTableSize() const {
 	SFsmTableSize size;
-	size.dwMainTableSize = m_rowsNibble.count() * sizeof(TFsmNibbleTable::value_type);
+	size.dwMainTableSize = m_rowsNibble.count() * sizeof(TNibbleFsmTable::value_type);
 	size.dwOutputTableSize = m_dwFsmNibbleOutputsCount * sizeof(TOutputTable::value_type);
-	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(TSearchFsmNibble::STable);
+	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(TNibbleSearchFsm::STable);
 
 	return size;
 }
 
 CFsmTest::SFsmTableSize CFsmTest::GetByteTableSize() const {
 	SFsmTableSize size;
-	size.dwMainTableSize = m_rowsByte.count() * sizeof(TFsmByteTable::value_type);
+	size.dwMainTableSize = m_rowsByte.count() * sizeof(TOctetFsmTable::value_type);
 	size.dwOutputTableSize = m_outputs.count() * sizeof(TOutputTable::value_type);
-	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(TSearchFsmByte::STable);
+	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(TOctetSearchFsm::STable);
 
 	return size;
 }
@@ -689,8 +689,8 @@ CFsmTest::TFindingsList CFsmTest::ProcessNibbleByFsm(unsigned int dwProcessedBit
 	TFindingsList findingsList;
 
 	unsigned int dwOut = m_pFsmNibble->PushByte(bNibble);
-	while (dwOut != TSearchFsmNibble::sm_outputNull) {
-		const TSearchFsmNibble::TOutput &out = m_pFsmNibble->GetOutput(dwOut);
+	while (dwOut != TNibbleSearchFsm::sm_outputNull) {
+		const TNibbleSearchFsm::TOutput &out = m_pFsmNibble->GetOutput(dwOut);
 		unsigned int dwPosition = dwProcessedBits - out.stepBack;
 		SFinding finding;
 		finding.nPatternIdx = out.patternIdx;
@@ -707,8 +707,8 @@ CFsmTest::TFindingsList CFsmTest::ProcessByteByFsm(unsigned int dwProcessedBits,
 	TFindingsList findingsList;
 
 	unsigned int dwOut = m_pFsmByte->PushByte(bData);
-	while (dwOut != TSearchFsmByte::sm_outputNull) {
-		const TSearchFsmByte::TOutput &out = m_pFsmByte->GetOutput(dwOut);
+	while (dwOut != TOctetSearchFsm::sm_outputNull) {
+		const TOctetSearchFsm::TOutput &out = m_pFsmByte->GetOutput(dwOut);
 		unsigned int dwPosition = dwProcessedBits - out.stepBack;
 		SFinding finding;
 		finding.nPatternIdx = out.patternIdx;
@@ -902,7 +902,7 @@ unsigned int CFsmTest::CBitFsmSearch::ProcessByte(const unsigned char bData, CFs
 class CFsmTest::CNibbleFsmSearch {
 public: // data
 	struct TSearchData {
-		CFsmCreator::SFsmWrap<CFsmTest::TSearchFsmNibble> wrap;
+		CFsmCreator::SFsmWrap<CFsmTest::TNibbleSearchFsm> wrap;
 		unsigned int dwBits;
 	};
 
@@ -920,7 +920,7 @@ public: // working methods
 CFsmTest::CNibbleFsmSearch::TSearchData CFsmTest::CNibbleFsmSearch::InitEngine(const TPatterns &patterns) {
 	CFsmCreator fsm(patterns);
 	fsm.GenerateTables();
-	TSearchData data = {fsm.CreateByteFsmWrap<TSearchFsmNibble>(), 0};
+	TSearchData data = {fsm.CreateByteFsmWrap<TNibbleSearchFsm>(), 0};
 	data.wrap.fsm.Reset();
 
 	return data;
@@ -946,7 +946,7 @@ unsigned int CFsmTest::CNibbleFsmSearch::ProcessByteCheckLength(const unsigned c
 	// Higher nibble
 	unsigned int dwOut = pSearchData->wrap.fsm.PushByte(HiNibble(bData));
 	pSearchData->dwBits += g_nNibbleLength;
-	while (dwOut != TSearchFsmNibble::sm_outputNull) {
+	while (dwOut != TNibbleSearchFsm::sm_outputNull) {
 		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 		if (out.stepBack <= pSearchData->dwBits) { // enough data
 			cHits++;
@@ -956,7 +956,7 @@ unsigned int CFsmTest::CNibbleFsmSearch::ProcessByteCheckLength(const unsigned c
 	// Lowwer nibble
 	dwOut = pSearchData->wrap.fsm.PushByte(LoNibble(bData));
 	pSearchData->dwBits += g_nNibbleLength;
-	while (dwOut != TSearchFsmNibble::sm_outputNull) {
+	while (dwOut != TNibbleSearchFsm::sm_outputNull) {
 		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 		if (out.stepBack <= pSearchData->dwBits) { // enough data
 			cHits++;
@@ -973,14 +973,14 @@ unsigned int CFsmTest::CNibbleFsmSearch::ProcessByte(const unsigned char bData, 
 
 	// Higher nibble
 	unsigned int dwOut = pSearchData->wrap.fsm.PushByte(HiNibble(bData));
-	while (dwOut != TSearchFsmNibble::sm_outputNull) {
+	while (dwOut != TNibbleSearchFsm::sm_outputNull) {
 		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 		cHits++;
 		dwOut = out.idxNextOutput;
 	}
 	// Lowwer nibble
 	dwOut = pSearchData->wrap.fsm.PushByte(LoNibble(bData));
-	while (dwOut != TSearchFsmNibble::sm_outputNull) {
+	while (dwOut != TNibbleSearchFsm::sm_outputNull) {
 		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 		cHits++;
 		dwOut = out.idxNextOutput;
@@ -994,7 +994,7 @@ unsigned int CFsmTest::CNibbleFsmSearch::ProcessByte(const unsigned char bData, 
 class CFsmTest::COctetFsmSearch {
 public: // data
 	struct TSearchData {
-		CFsmCreator::SFsmWrap<CFsmTest::TSearchFsmByte> wrap;
+		CFsmCreator::SFsmWrap<CFsmTest::TOctetSearchFsm> wrap;
 		unsigned int dwBits;
 	};
 
@@ -1012,7 +1012,7 @@ public: // working methods
 CFsmTest::COctetFsmSearch::TSearchData CFsmTest::COctetFsmSearch::InitEngine(const TPatterns &patterns) {
 	CFsmCreator fsm(patterns);
 	fsm.GenerateTables();
-	TSearchData data = {fsm.CreateByteFsmWrap<TSearchFsmByte>(), 0};
+	TSearchData data = {fsm.CreateByteFsmWrap<TOctetSearchFsm>(), 0};
 	data.wrap.fsm.Reset();
 
 	return data;
@@ -1036,7 +1036,7 @@ unsigned int CFsmTest::COctetFsmSearch::ProcessByteCheckLength(const unsigned ch
 	unsigned int cHits = 0;
 	unsigned int dwOut = pSearchData->wrap.fsm.PushByte(bData);
 	pSearchData->dwBits += g_nByteLength;
-	while (dwOut != TSearchFsmNibble::sm_outputNull) {
+	while (dwOut != TNibbleSearchFsm::sm_outputNull) {
 		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 		if (out.stepBack <= pSearchData->dwBits) { // enough data
 			cHits++;
@@ -1051,7 +1051,7 @@ unsigned int CFsmTest::COctetFsmSearch::ProcessByte(const unsigned char bData, C
 	// process the byte at once
 	unsigned int cHits = 0;
 	unsigned int dwOut = pSearchData->wrap.fsm.PushByte(bData);
-	while (dwOut != TSearchFsmNibble::sm_outputNull) {
+	while (dwOut != TNibbleSearchFsm::sm_outputNull) {
 		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 		cHits++;
 		dwOut = out.idxNextOutput;

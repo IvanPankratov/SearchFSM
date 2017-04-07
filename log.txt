@@ -413,3 +413,8 @@ Class CNibbleFsmSearch for template tests of SearchFSM-4 (nibble SearchFSM)
 Class COctetFsmSearch for template tests of SearchFSM-8 (octet SearchFSM)
 Добавил класс COctetFsmSearch для тестирования восьмибитового поискового автомата.
 Добавил его в клиента (main.cpp).
+
+07.04.2017
+Refactoring: rename FsmByte to OctetFsm and so on
+Переименовал TSearchFsmNibble в TNibbleSearchFsm, TSearchFsmByte в TOctetSearchFsm, TestFsmRate2
+в TestBitFsmRate, TFsmNibbleTable в TNibbleFsmTable и т.п.

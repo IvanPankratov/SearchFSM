@@ -20,13 +20,13 @@ public:
 
 	// FSM types
 	typedef CSearchFsm<TStateIdx, TOutputIdx> TSearchFsm;
-	typedef CSearchFsmByte<g_nNibbleLength, TStateIdx, TOutputIdx> TSearchFsmNibble;
-	typedef CSearchFsmByte<g_nByteLength, TStateIdx, TOutputIdx> TSearchFsmByte;
+	typedef CSearchFsmByte<g_nNibbleLength, TStateIdx, TOutputIdx> TNibbleSearchFsm;
+	typedef CSearchFsmByte<g_nByteLength, TStateIdx, TOutputIdx> TOctetSearchFsm;
 
 	// ancillary types
-	typedef QVector<TSearchFsm::STableRow> TFsmTable;
-	typedef QVector<TSearchFsmNibble::STableRow> TFsmNibbleTable;
-	typedef QVector<TSearchFsmByte::STableRow> TFsmByteTable;
+	typedef QVector<TSearchFsm::STableRow> TBitFsmTable;
+	typedef QVector<TNibbleSearchFsm::STableRow> TNibbleFsmTable;
+	typedef QVector<TOctetSearchFsm::STableRow> TOctetFsmTable;
 	typedef QVector<TSearchFsm::SOutput> TOutputTable;
 
 	// time measurement results structure
@@ -77,8 +77,8 @@ public:
 
 	// rate is measured in bytes per second
 	SEnginePerformance TestFsmRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
-	bool TestFsmRate2(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
-	bool TestFsmNibbleRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
+	bool TestBitFsmRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
+	bool TestNibbleFsmRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 	SEnginePerformance TestFsmByteRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
 	bool TestOctetFsmRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 	SEnginePerformance TestRegisterRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
@@ -141,13 +141,13 @@ private:
 	unsigned int m_dwFsmOutputsCount;
 	unsigned int m_dwFsmNibbleOutputsCount;
 	TSearchFsm *m_pFsm;
-	TSearchFsmNibble *m_pFsmNibble;
-	TSearchFsmByte *m_pFsmByte;
+	TNibbleSearchFsm *m_pFsmNibble;
+	TOctetSearchFsm *m_pFsmByte;
 
 	// members for storing and releasing the tables
-	const TFsmTable m_rows;
-	const TFsmNibbleTable m_rowsNibble;
-	const TFsmByteTable m_rowsByte;
+	const TBitFsmTable m_rows;
+	const TNibbleFsmTable m_rowsNibble;
+	const TOctetFsmTable m_rowsByte;
 	const TOutputTable m_outputs;
 };
 
