@@ -44,11 +44,14 @@ public:
 
 	struct SFsmStatistics {
 		unsigned int dwStatesCount;
+		unsigned int dwOutputCellsCount;
+		unsigned int dwCollisionsCount;
 		SFsmTableSize tableSize;
 		SFsmTableSize tableMinSize;
 	};
 
 	struct SEnginePerformance {
+		bool fSuccess;
 		STimeings timInitialization;
 		STimeings timOperating;
 		unsigned int dwBytesCount; // overall bytes processed

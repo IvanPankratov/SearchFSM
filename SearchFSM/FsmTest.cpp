@@ -678,9 +678,11 @@ bool CFsmTest::TestEngine(unsigned int dwTestBytesCount, SEnginePerformance *pRe
 		performance.dCpuUsage = timer.GetThreadDuration() / tSeconds;
 		performance.dCpuKernelUsage = timer.GetKernelDuration() / tSeconds;
 
+		performance.fSuccess = true;
 		*pResult = performance;
 	}
 	catch(...) {
+		pResult->fSuccess = false;
 		return false;
 	}
 
@@ -840,6 +842,7 @@ class CFsmTest::CBitFsmSearch {
 public: // data
 	struct TSearchData {
 		CFsmCreator::SFsmWrap<TSearchFsm> wrap;
+		unsigned int dwCollisionsCount;
 		unsigned int dwBits;
 	};
 
@@ -857,7 +860,7 @@ public: // working methods
 CFsmTest::CBitFsmSearch::TSearchData CFsmTest::CBitFsmSearch::InitEngine(const TPatterns &patterns) {
 	CFsmCreator fsm(patterns);
 	fsm.GenerateTables();
-	TSearchData data = {fsm.CreateFsmWrap<TSearchFsm>(), 0};
+	TSearchData data = {fsm.CreateFsmWrap<TSearchFsm>(), fsm.GetCollisionsCount(), 0};
 	data.wrap.fsm.Reset();
 
 	return data;
@@ -870,6 +873,8 @@ unsigned int CFsmTest::CBitFsmSearch::GetMemoryRequirements(const CFsmTest::CBit
 CFsmTest::SFsmStatistics CFsmTest::CBitFsmSearch::GetFsmStatistics(const CFsmTest::CBitFsmSearch::TSearchData &data) {
 	CFsmTest::SFsmStatistics stats;
 	stats.dwStatesCount = data.wrap.m_rows.count();
+	stats.dwOutputCellsCount = data.wrap.m_outputTable.count();
+	stats.dwCollisionsCount = data.dwCollisionsCount;
 	stats.tableSize = CFsmTest::GetTableSize(data.wrap);
 	stats.tableMinSize = CFsmTest::GetMinimalTableSize(data.wrap);
 
@@ -923,6 +928,7 @@ class CFsmTest::CNibbleFsmSearch {
 public: // data
 	struct TSearchData {
 		CFsmCreator::SFsmWrap<CFsmTest::TNibbleSearchFsm> wrap;
+		unsigned int dwCollisionsCount;
 		unsigned int dwBits;
 	};
 
@@ -940,7 +946,7 @@ public: // working methods
 CFsmTest::CNibbleFsmSearch::TSearchData CFsmTest::CNibbleFsmSearch::InitEngine(const TPatterns &patterns) {
 	CFsmCreator fsm(patterns);
 	fsm.GenerateTables();
-	TSearchData data = {fsm.CreateByteFsmWrap<TNibbleSearchFsm>(), 0};
+	TSearchData data = {fsm.CreateByteFsmWrap<TNibbleSearchFsm>(), fsm.GetCollisionsCount(), 0};
 	data.wrap.fsm.Reset();
 
 	return data;
@@ -953,6 +959,8 @@ unsigned int CFsmTest::CNibbleFsmSearch::GetMemoryRequirements(const CFsmTest::C
 CFsmTest::SFsmStatistics CFsmTest::CNibbleFsmSearch::GetFsmStatistics(const CFsmTest::CNibbleFsmSearch::TSearchData &data) {
 	CFsmTest::SFsmStatistics stats;
 	stats.dwStatesCount = data.wrap.m_rows.count();
+	stats.dwOutputCellsCount = data.wrap.m_outputTable.count();
+	stats.dwCollisionsCount = data.dwCollisionsCount;
 	stats.tableSize = CFsmTest::GetTableSize(data.wrap);
 	stats.tableMinSize = CFsmTest::GetMinimalTableSize(data.wrap);
 
@@ -1015,6 +1023,7 @@ class CFsmTest::COctetFsmSearch {
 public: // data
 	struct TSearchData {
 		CFsmCreator::SFsmWrap<CFsmTest::TOctetSearchFsm> wrap;
+		unsigned int dwCollisionsCount;
 		unsigned int dwBits;
 	};
 
@@ -1032,7 +1041,7 @@ public: // working methods
 CFsmTest::COctetFsmSearch::TSearchData CFsmTest::COctetFsmSearch::InitEngine(const TPatterns &patterns) {
 	CFsmCreator fsm(patterns);
 	fsm.GenerateTables();
-	TSearchData data = {fsm.CreateByteFsmWrap<TOctetSearchFsm>(), 0};
+	TSearchData data = {fsm.CreateByteFsmWrap<TOctetSearchFsm>(), fsm.GetCollisionsCount(), 0};
 	data.wrap.fsm.Reset();
 
 	return data;
@@ -1045,6 +1054,8 @@ unsigned int CFsmTest::COctetFsmSearch::GetMemoryRequirements(const CFsmTest::CO
 CFsmTest::SFsmStatistics CFsmTest::COctetFsmSearch::GetFsmStatistics(const CFsmTest::COctetFsmSearch::TSearchData &data) {
 	CFsmTest::SFsmStatistics stats;
 	stats.dwStatesCount = data.wrap.m_rows.count();
+	stats.dwOutputCellsCount = data.wrap.m_outputTable.count();
+	stats.dwCollisionsCount = data.dwCollisionsCount;
 	stats.tableSize = CFsmTest::GetTableSize(data.wrap);
 	stats.tableMinSize = CFsmTest::GetMinimalTableSize(data.wrap);
 
