@@ -65,6 +65,11 @@ public:
 		long double dCpuKernelUsage;
 	};
 
+	struct SPatternsStats {
+		int nMaxLength;
+		int nMaxErrorsCount;
+	};
+
 public:
 	CFsmTest();
 	~CFsmTest();
@@ -91,6 +96,8 @@ public: // table size calculating methods
 
 	template <class TSearchFsm_>
 	static SFsmTableSize GetMinimalTableSize(const CFsmCreator::SFsmWrap<TSearchFsm_>& fsm);
+
+	static SPatternsStats AnalysePatterns(const TPatterns& patterns);
 
 public: // table size quering methods
 	unsigned int GetStatesCount() const {return m_rows.count();}

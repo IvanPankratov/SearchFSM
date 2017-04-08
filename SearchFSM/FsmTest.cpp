@@ -480,6 +480,26 @@ void CFsmTest::ReleaseFsm() {
 	}
 }
 
+CFsmTest::SPatternsStats CFsmTest::AnalysePatterns(const TPatterns &patterns) {
+	SPatternsStats result;
+	result.nMaxLength = 0;
+	result.nMaxErrorsCount = 0;
+	int idx;
+	for (idx = 0; idx < patterns.count(); idx++) {
+		int nLength = patterns[idx].nLength;
+		if (result.nMaxLength < nLength) {
+			result.nMaxLength = nLength;
+		}
+
+		int nErrorsCount = patterns[idx].nMaxErrors;
+		if (result.nMaxErrorsCount < nErrorsCount) {
+			result.nMaxErrorsCount = nErrorsCount;
+		}
+	}
+
+	return result;
+}
+
 // table size calculating methods
 template <class TSearchFsm_>
 CFsmTest::SFsmTableSize CFsmTest::GetTableSize(const CFsmCreator::SFsmWrap<TSearchFsm_> &wrap) {
@@ -1084,21 +1104,13 @@ public: // working methods
 };
 
 CFsmTest::CRegisterSearch::TSearchData CFsmTest::CRegisterSearch::InitEngine(const TPatterns &patterns) {
-	// analyse patterns
-	int nMaxPatternLength = 0;
-	int idx;
-	for (idx = 0; idx < patterns.count(); idx++) {
-		int nLength = patterns[idx].nLength;
-		if (nMaxPatternLength < nLength) {
-			nMaxPatternLength = nLength;
-		}
-	}
-
 	// prepare shift register and test patterns
+	int nMaxPatternLength = AnalysePatterns(patterns).nMaxLength;
 	TSearchData data;
 	data.dwPatternsCount = patterns.count();
 	data.initialPatterns = patterns;
 	data.reg.Init(nMaxPatternLength);
+	int idx;
 	for (idx = 0; idx < patterns.count(); idx++) {
 		data.patterns.append(data.reg.ConvertPattern(patterns[idx]));
 	}

@@ -418,3 +418,9 @@ Class COctetFsmSearch for template tests of SearchFSM-8 (octet SearchFSM)
 Refactoring: rename FsmByte to OctetFsm and so on
 Переименовал TSearchFsmNibble в TNibbleSearchFsm, TSearchFsmByte в TOctetSearchFsm, TestFsmRate2
 в TestBitFsmRate, TFsmNibbleTable в TNibbleFsmTable и т.п.
+
+08.04.2017
+Static method CFsmTest::AnalysePatterns to avoid copy-paste code
+Вынес метод для вычисления параметров набора шаблонов в метод CFsmTest::AnalysePatterns для
+избежания повторения кода.
+Позже устраню не-статический одноимённый метод.
