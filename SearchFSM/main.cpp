@@ -62,22 +62,65 @@ void PrintTableSize(const CFsmTest::SFsmTableSize &size) {
 	Print(QString("Total size: %1\n").arg(DataSizeToString(size.dwTotalSize)));
 }
 
-void PrintFsmStats(const CFsmTest &fsm) {
-	unsigned int dwStatesCount = fsm.GetStatesCount();
-	unsigned int dwOutputCellsCount = fsm.GetOutputElementsCount();
-	Print(QString("\nFSM with %1 states, %2 output elements.\n").arg(dwStatesCount).arg(dwOutputCellsCount));
+void PrintTimings(const char *szPrefix, const CFsmTest::STimeings &timings) {
+	long double dCpuUsage = 1., dCpuKernelUsage = 0;
+	if (timings.dTotalTime > 0) {
+		dCpuUsage = timings.dCpuTime / timings.dTotalTime;
+		if (dCpuUsage > 1) {
+			dCpuUsage = 1;
+		}
 
-	CFsmTest::SFsmTableSize size = fsm.GetTableSize();
-	printf("\nDefault FSM memory requirements:\n");
-	PrintTableSize(size);
+		dCpuKernelUsage = timings.dKernelTime / timings.dTotalTime;
+		if (dCpuKernelUsage > 1) {
+			dCpuKernelUsage = 1;
+		}
+	}
+	printf("%s: %Lg s (%Lg CPU, %Lg Core)\n", szPrefix, timings.dTotalTime, dCpuUsage, dCpuKernelUsage);
+}
 
-	printf("\nFSM memory requirements with minimal data types and no memory alignment:\n");
-	size = fsm.GetMinimalTableSize();
-	PrintTableSize(size);
+void PrintFsmStatistics(const CFsmTest::SFsmStatistics &stats) {
+	printf("FSM statistics: %i states, %i output elements.\n", stats.dwStatesCount, stats.dwOutputCellsCount);
+	if (stats.dwCollisionsCount > 0) {
+		printf("FSM state hashes have %i collisions\n", stats.dwCollisionsCount);
+	}
 
+	printf("Default FSM memory requirements:\n");
+	PrintTableSize(stats.tableSize);
+
+	printf("FSM memory requirements with minimal data types and no memory alignment:\n");
+	PrintTableSize(stats.tableMinSize);
+}
+
+void PrintEnginePerformance(const char *szEngineName, const CFsmTest::SEnginePerformance &performance) {
+	printf("= Results for %s =\n", szEngineName);
+	PrintTimings("Initialization", performance.timInitialization);
+	PrintTimings("Operating", performance.timOperating);
+
+	long double dRate = performance.dwBytesCount / performance.timOperating.dTotalTime;
+	Print(QString("Total rate: %1/s, found %2 entries\n").arg(DataSizeToString(dRate)).arg(performance.dwHits));
+
+	Print(QString("Total memory requirements: %1\n").arg(DataSizeToString(performance.dwMemoryRequirements)));
+	if (performance.fIsFsm) { // results for some SearchFSM engine
+		PrintFsmStatistics(performance.fsmStatistics);
+	}
+	puts("");
+}
+
+void PrintEnginePerformance(const char *szEngineName, bool fSuccess, const CFsmTest::SEnginePerformance &performance) {
+	if (fSuccess) {
+		PrintEnginePerformance(szEngineName, performance);
+	} else {
+		printf("Failed to test %s!\n", szEngineName);
+	}
 }
 
 struct STestResult {
+	CFsmTest::SEnginePerformance perfRegister;
+	CFsmTest::SEnginePerformance perfFsm1;
+	CFsmTest::SEnginePerformance perfFsm4;
+	CFsmTest::SEnginePerformance perfFsm8;
+
+	// obsolete
 	int nFsmStates;
 	unsigned int dwTableSize;
 	unsigned int dwMinTableSize;
@@ -90,8 +133,6 @@ struct STestResult {
 };
 
 STestResult TestSpeed(const TPatterns patterns) {
-	const unsigned int g_dwMebi = 1024 * 1024;
-
 	CFsmTest tester;
 	printf("\nSearch FSM for patterns:\n");
 	printf("Creating FSM...\r");
@@ -111,16 +152,10 @@ STestResult TestSpeed(const TPatterns patterns) {
 			}
 			catch(...) {
 				puts("Failed to create bit SearchFSM!");
-				STestResult resultNo = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+				STestResult resultNo;
 				return resultNo;
 			}
 		}
-	}
-
-	PrintFsmStats(tester);
-	unsigned int dwCollisions = tester.GetCollisionsCount();
-	if (dwCollisions > 0) {
-		printf("FSM state hashes have %i collisions\n", dwCollisions);
 	}
 
 	printf("\nTest correctness...");
@@ -130,43 +165,30 @@ STestResult TestSpeed(const TPatterns patterns) {
 	Print(QString("Tested on %1 data, found %2 entries\n").arg(DataSizeToString(g_nFastTestCorrectnessBytes)).arg(dwHits));
 
 	Print(QString("\nSpeed tests (on %1 data):\n").arg(DataSizeToString(g_nTestSpeedBytes)));
-	CFsmTest::SEnginePerformance performance = tester.TestFsmRate(g_nTestSpeedBytes, &dwHits);
-	long double dFsmRate = performance.dRate;
-	printf("FSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", dFsmRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, dwHits);
-
-	if (tester.TestBitFsmRate(g_nTestSpeedBytes, &performance)) {
-		printf("FSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", performance.dRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, performance.dwHits);
-		printf("%i states, %i (%i) memory, %Lg init-time\n", performance.fsmStatistics.dwStatesCount, performance.dwMemoryRequirements,
-			performance.fsmStatistics.tableMinSize.dwTotalSize, performance.timInitialization.dTotalTime);
-	}
+	STestResult result;
+	CFsmTest::SEnginePerformance performance;
+	long double dFsmRate = -1;
+	bool fSuccess = tester.TestBitFsmRate(g_nTestSpeedBytes, &performance);
+	PrintEnginePerformance("Bit SearchFSM (FSM-1)", fSuccess, performance);
+	result.perfFsm1 = performance;
+	dFsmRate = performance.dRate;
 
 	long double dFsmNibbleRate = -1;
-	if (tester.TestNibbleFsmRate(g_nTestSpeedBytes, &performance)) {
-		dFsmNibbleRate = performance.dRate;
-		printf("Nibble SearchFSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", dFsmNibbleRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, performance.dwHits);
-		printf("%i states, %i (%i) memory, %Lg init-time\n", performance.fsmStatistics.dwStatesCount, performance.dwMemoryRequirements,
-			performance.fsmStatistics.tableMinSize.dwTotalSize, performance.timInitialization.dTotalTime);
-	}
+	fSuccess = tester.TestNibbleFsmRate(g_nTestSpeedBytes, &performance);
+	PrintEnginePerformance("Nibble SearchFSM (FSM-4)", fSuccess, performance);
+	result.perfFsm4 = performance;
+	dFsmNibbleRate = performance.dRate;
 
-	performance = tester.TestFsmByteRate(g_nTestSpeedBytes, &dwHits);
+	fSuccess = tester.TestOctetFsmRate(g_nTestSpeedBytes, &performance);
+	PrintEnginePerformance("Octet SearchFSM (FSM-8)", fSuccess, performance);
+	result.perfFsm8 = performance;
 	long double dFsmByteRate = performance.dRate;
-	printf("Byte SearchFSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", dFsmByteRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, dwHits);
 
-	if (tester.TestOctetFsmRate(g_nTestSpeedBytes, &performance)) {
-		printf("Octet SearchFSM speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", performance.dRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, performance.dwHits);
-		printf("%i states, %i (%i) memory, %Lg init-time\n", performance.fsmStatistics.dwStatesCount, performance.dwMemoryRequirements,
-			performance.fsmStatistics.tableMinSize.dwTotalSize, performance.timInitialization.dTotalTime);
-	}
-
-	performance = tester.TestRegisterRate(g_nTestSpeedBytes, &dwHits);
+	fSuccess = tester.TestRegisterRate2(g_nTestSpeedBytes, &performance);
+	PrintEnginePerformance("Register search", fSuccess, performance);
+	result.perfRegister = performance;
 	long double dRegisterRate = performance.dRate;
-	printf("Register speed: %Lg MiB/s, %Lg, %Lg (found %i entries)\n", dRegisterRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, dwHits);
 
-	if (tester.TestRegisterRate2(g_nTestSpeedBytes, &performance)) {
-		printf("Register speed (pattern): %Lg MiB/s, %Lg, %Lg (found %i entries)\n", performance.dRate / g_dwMebi, performance.dCpuUsage, performance.dCpuKernelUsage, performance.dwHits);
-	}
-
-	STestResult result;
 	result.nFsmStates = tester.GetStatesCount();
 	result.dwTableSize = tester.GetTableSize().dwTotalSize;
 	result.dwMinTableSize = tester.GetMinimalTableSize().dwTotalSize;
