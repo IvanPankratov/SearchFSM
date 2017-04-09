@@ -433,3 +433,7 @@ More detailed statistics in CFsmTest::SEnginePerformance
 New format test results (more detailed)
 Сделал в клиенте (main.cpp) вывод подробной статистики нового формата по резултатам тестирования.
 Пока не сделал вывод итоговой таблицы со всеми результатами опытов.
+-
+General test results table in client, some clean-up
+Реализовал вывод результатов тестирования в общих таблицах после группы методов тестирования.
+Почистил устаревшие методы тестирования.

@@ -110,7 +110,7 @@ void PrintEnginePerformance(const char *szEngineName, bool fSuccess, const CFsmT
 	if (fSuccess) {
 		PrintEnginePerformance(szEngineName, performance);
 	} else {
-		printf("Failed to test %s!\n", szEngineName);
+		printf("= FAILED to test %s =\n\n", szEngineName);
 	}
 }
 
@@ -119,43 +119,19 @@ struct STestResult {
 	CFsmTest::SEnginePerformance perfFsm1;
 	CFsmTest::SEnginePerformance perfFsm4;
 	CFsmTest::SEnginePerformance perfFsm8;
-
-	// obsolete
-	int nFsmStates;
-	unsigned int dwTableSize;
-	unsigned int dwMinTableSize;
-	unsigned int dwTableNibbleSize;
-	unsigned int dwTableByteSize;
-	double dFsmRate;
-	double dFsmNibbleRate;
-	double dFsmByteRate;
-	double dRegisterRate;
 };
 
 STestResult TestSpeed(const TPatterns patterns) {
 	CFsmTest tester;
-	printf("\nSearch FSM for patterns:\n");
-	printf("Creating FSM...\r");
+	printf("\nSearch engines for patterns:\n");
 	PrintPatterns(patterns);
 	try {
-		tester.CreateFsm(patterns, true, true);
+		tester.CreateFsm(patterns, false, false);
 	}
 	catch(...) {
-		try {
-			puts("Failed to create byte SearchFSM - to big tables");
-			tester.CreateFsm(patterns, true, false);
-		}
-		catch(...) {
-			puts("Failed to create even nibble SearchFSM - to big tables");
-			try {
-				tester.CreateFsm(patterns, false, false);
-			}
-			catch(...) {
-				puts("Failed to create bit SearchFSM!");
-				STestResult resultNo;
-				return resultNo;
-			}
-		}
+		puts("Failed to create bit SearchFSM!");
+		STestResult resultNo;
+		return resultNo;
 	}
 
 	printf("\nTest correctness...");
@@ -164,40 +140,24 @@ STestResult TestSpeed(const TPatterns patterns) {
 	puts(fOk? "OK" : "FAIL");
 	Print(QString("Tested on %1 data, found %2 entries\n").arg(DataSizeToString(g_nFastTestCorrectnessBytes)).arg(dwHits));
 
-	Print(QString("\nSpeed tests (on %1 data):\n").arg(DataSizeToString(g_nTestSpeedBytes)));
+	Print(QString("\nSpeed tests (on %1 data):\n\n").arg(DataSizeToString(g_nTestSpeedBytes)));
 	STestResult result;
 	CFsmTest::SEnginePerformance performance;
-	long double dFsmRate = -1;
 	bool fSuccess = tester.TestBitFsmRate(g_nTestSpeedBytes, &performance);
 	PrintEnginePerformance("Bit SearchFSM (FSM-1)", fSuccess, performance);
 	result.perfFsm1 = performance;
-	dFsmRate = performance.dRate;
 
-	long double dFsmNibbleRate = -1;
 	fSuccess = tester.TestNibbleFsmRate(g_nTestSpeedBytes, &performance);
 	PrintEnginePerformance("Nibble SearchFSM (FSM-4)", fSuccess, performance);
 	result.perfFsm4 = performance;
-	dFsmNibbleRate = performance.dRate;
 
 	fSuccess = tester.TestOctetFsmRate(g_nTestSpeedBytes, &performance);
 	PrintEnginePerformance("Octet SearchFSM (FSM-8)", fSuccess, performance);
 	result.perfFsm8 = performance;
-	long double dFsmByteRate = performance.dRate;
 
-	fSuccess = tester.TestRegisterRate2(g_nTestSpeedBytes, &performance);
+	fSuccess = tester.TestRegisterRate(g_nTestSpeedBytes, &performance);
 	PrintEnginePerformance("Register search", fSuccess, performance);
 	result.perfRegister = performance;
-	long double dRegisterRate = performance.dRate;
-
-	result.nFsmStates = tester.GetStatesCount();
-	result.dwTableSize = tester.GetTableSize().dwTotalSize;
-	result.dwMinTableSize = tester.GetMinimalTableSize().dwTotalSize;
-	result.dwTableNibbleSize = tester.GetNibbleTableSize().dwTotalSize;
-	result.dwTableByteSize = tester.GetByteTableSize().dwTotalSize;
-	result.dFsmRate = dFsmRate;
-	result.dFsmNibbleRate = dFsmNibbleRate;
-	result.dFsmByteRate = dFsmByteRate;
-	result.dRegisterRate = dRegisterRate;
 
 	return result;
 }
@@ -267,73 +227,45 @@ TTestList TestOnPatterns(int nMaxCount, int nLength, int nErrors = 0, bool fMask
 	return testList;
 }
 
-void DumpTestList(const TTestList &list) {
-	const unsigned int g_dwMebi = 1024 * 1024;
+void DumpPerformance(const CFsmTest::SEnginePerformance &perf, unsigned int dwHits, bool fIsFsm) {
+	// init-time, rate, mem-req
+	if (perf.fSuccess) {
+		if (perf.dwHits != dwHits) {
+			printf("FAIL");
+		}
+		long double dRate = perf.dwBytesCount / perf.timOperating.dTotalTime;
+		printf("%Lg\t%Lg\t%i\t", perf.timInitialization.dTotalTime, dRate, perf.dwMemoryRequirements);
+	} else {
+		printf("X\tX\tX\t");
+	}
 
-	printf("\nlength");
+	// states
+	if (fIsFsm) {
+		if (perf.fSuccess && perf.fIsFsm) {
+			printf("%i\t", perf.fsmStatistics.dwStatesCount/*, perf.fsmStatistics.tableSize.dwTotalSize*/);
+		} else {
+			printf("X\t");
+		}
+	}
+}
+
+void DumpTestList(const TTestList &list) {
+	printf("\nlength\tcount\terrors\tmasked\thits\t");
+	printf("reg:init-time\trate\tmemory\t");
+	printf("FSM-1:init-time\trate\tmemory\tstates\t");
+	printf("FSM-4:init-time\trate\tmemory\tstates\t");
+	printf("FSM-8:init-time\trate\tmemory\tstates");
+
 	int idx;
 	for (idx = 0; idx < list.count(); idx++) {
-		printf("\t%i", list[idx].nPatternsLength);
-	}
-
-	printf("\ncount");
-	for (idx = 0; idx < list.count(); idx++) {
-		printf("\t%i", list[idx].nPatternsCount);
-	}
-
-	printf("\nerrors");
-	for (idx = 0; idx < list.count(); idx++) {
-		printf("\t%i", list[idx].nErrorsCount);
-	}
-
-	printf("\nmasked");
-	for (idx = 0; idx < list.count(); idx++) {
-		printf("\t%s", list[idx].fMasked? "true" : "false");
-	}
-
-	printf("\nstates");
-	for (idx = 0; idx < list.count(); idx++) {
-		printf("\t%i", list[idx].result.nFsmStates);
-	}
-
-	printf("\ntable");
-	for (idx = 0; idx < list.count(); idx++) {
-		Print(QString("\t%1").arg(DataSizeToString(list[idx].result.dwTableSize)));
-	}
-
-	printf("\nmin-table");
-	for (idx = 0; idx < list.count(); idx++) {
-		Print(QString("\t%1").arg(DataSizeToString(list[idx].result.dwMinTableSize)));
-	}
-
-	printf("\nbit FSM rate");
-	for (idx = 0; idx < list.count(); idx++) {
-		printf("\t%g", list[idx].result.dFsmRate / g_dwMebi);
-	}
-
-	printf("\nnibble table");
-	for (idx = 0; idx < list.count(); idx++) {
-		Print(QString("\t%1").arg(DataSizeToString(list[idx].result.dwTableNibbleSize)));
-	}
-
-	printf("\nnibble FSM rate");
-	for (idx = 0; idx < list.count(); idx++) {
-		printf("\t%g", list[idx].result.dFsmNibbleRate / g_dwMebi);
-	}
-
-	printf("\nbyte table");
-	for (idx = 0; idx < list.count(); idx++) {
-		Print(QString("\t%1").arg(DataSizeToString(list[idx].result.dwTableByteSize)));
-	}
-
-	printf("\nbyte FSM rate");
-	for (idx = 0; idx < list.count(); idx++) {
-		printf("\t%g", list[idx].result.dFsmByteRate / g_dwMebi);
-	}
-
-	printf("\nReg rate");
-	for (idx = 0; idx < list.count(); idx++) {
-		printf("\t%g", list[idx].result.dRegisterRate / g_dwMebi);
+		const STest &test = list[idx];
+		unsigned int dwHits = test.result.perfRegister.dwHits;
+		printf("\n%i\t%i\t%i\t%s\t%i\t", test.nPatternsLength, test.nPatternsCount, test.nErrorsCount, test.fMasked? "masked" : "no mask", dwHits);
+		const STestResult &result = test.result;
+		DumpPerformance(result.perfRegister, dwHits, false);
+		DumpPerformance(result.perfFsm1, dwHits, true);
+		DumpPerformance(result.perfFsm4, dwHits, true);
+		DumpPerformance(result.perfFsm8, dwHits, true);
 	}
 
 	printf("\n\n");

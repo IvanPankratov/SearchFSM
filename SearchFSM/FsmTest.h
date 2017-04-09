@@ -61,11 +61,6 @@ public:
 		unsigned int dwMemoryRequirements; // total memory requirements
 		bool fIsFsm; // true for FSMs
 		SFsmStatistics fsmStatistics; // for FSMs only
-
-		// obsolete
-		long double dRate; // bytes per second
-		long double dCpuUsage;
-		long double dCpuKernelUsage;
 	};
 
 	struct SPatternsStats {
@@ -83,14 +78,10 @@ public:
 	bool TraceFsm(int nDataLength);
 	bool TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, /* out, optional */ unsigned int *pdwHits = NULL);
 
-	// rate is measured in bytes per second
-	SEnginePerformance TestFsmRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
 	bool TestBitFsmRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 	bool TestNibbleFsmRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
-	SEnginePerformance TestFsmByteRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
 	bool TestOctetFsmRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
-	SEnginePerformance TestRegisterRate(unsigned int dwTestBytesCount, /* out, optional */ unsigned int *pdwHits = NULL);
-	bool TestRegisterRate2(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
+	bool TestRegisterRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 	void ReleaseFsm();
 
 public: // table size calculating methods
