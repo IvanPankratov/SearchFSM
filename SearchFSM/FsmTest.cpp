@@ -472,13 +472,14 @@ bool CFsmTest::TestEnginePerformance(unsigned int dwTestBytesCount, SEnginePerfo
 		for (dwBytes = 0; dwBytes < dwCheckLengthBytes; dwBytes++) {
 			unsigned char bData = lcg.RandomByte();
 			unsigned int dwMask = (int)cHits >> 31; // either all ones or null
-			cHits += TSearchEngine::ProcessByteCheckLength(bData, &searchData);
+			TFindingsList findings = TSearchEngine::ProcessByte(bData, &searchData);
+			cHits += findings.count();
 			cHits |= dwMask;
 		}
 		for (; dwBytes < dwTestBytesCount; dwBytes++) {
 			unsigned char bData = lcg.RandomByte();
 			unsigned int dwMask = (int)cHits >> 31; // either all ones or null
-			cHits += TSearchEngine::ProcessByte(bData, &searchData);
+			cHits += TSearchEngine::ProcessByteIdle(bData, &searchData);
 			cHits |= dwMask;
 		}
 		timer.Stop();
@@ -654,8 +655,8 @@ public: // initialization & statictics
 	static CFsmTest::SFsmStatistics GetFsmStatistics(const TSearchData &data);
 
 public: // working methods
-	static unsigned int ProcessByteCheckLength(const unsigned char bData, TSearchData *pSearchData);
-	static unsigned int ProcessByte(const unsigned char bData, TSearchData *pSearchData);
+	static CFsmTest::TFindingsList ProcessByte(const unsigned char bData, TSearchData *pSearchData);
+	static unsigned int ProcessByteIdle(const unsigned char bData, TSearchData *pSearchData);
 };
 
 CFsmTest::CBitFsmSearch::TSearchData CFsmTest::CBitFsmSearch::InitEngine(const TPatterns &patterns) {
@@ -682,8 +683,8 @@ CFsmTest::SFsmStatistics CFsmTest::CBitFsmSearch::GetFsmStatistics(const CFsmTes
 	return stats;
 }
 
-unsigned int CFsmTest::CBitFsmSearch::ProcessByteCheckLength(const unsigned char bData, CFsmTest::CBitFsmSearch::TSearchData *pSearchData) {
-	unsigned int cHits = 0;
+CFsmTest::TFindingsList CFsmTest::CBitFsmSearch::ProcessByte(const unsigned char bData, CFsmTest::CBitFsmSearch::TSearchData *pSearchData) {
+	TFindingsList result;
 	int nBit;
 	for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {
 		// obtain next bit
@@ -695,16 +696,22 @@ unsigned int CFsmTest::CBitFsmSearch::ProcessByteCheckLength(const unsigned char
 		while (dwOut != TSearchFsm::sm_outputNull) {
 			const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 			if (out.stepBack <= pSearchData->dwBits) { // enough data
-				cHits++;
+				SFinding finding;
+				finding.nPatternIdx = out.patternIdx;
+				finding.nErrors = out.errorsCount;
+				unsigned int dwPosition = pSearchData->dwBits - out.stepBack;
+				finding.dwPosition = dwPosition;
+				result << finding;
+				dwOut = out.idxNextOutput;
 			}
 			dwOut = out.idxNextOutput;
 		}
 	}
 
-	return cHits;
+	return result;
 }
 
-unsigned int CFsmTest::CBitFsmSearch::ProcessByte(const unsigned char bData, CFsmTest::CBitFsmSearch::TSearchData *pSearchData) {
+unsigned int CFsmTest::CBitFsmSearch::ProcessByteIdle(const unsigned char bData, CFsmTest::CBitFsmSearch::TSearchData *pSearchData) {
 	unsigned int cHits = 0;
 	int nBit;
 	for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {
@@ -740,8 +747,8 @@ public: // initialization & statictics
 	static CFsmTest::SFsmStatistics GetFsmStatistics(const TSearchData &data);
 
 public: // working methods
-	static unsigned int ProcessByteCheckLength(const unsigned char bData, TSearchData *pSearchData);
-	static unsigned int ProcessByte(const unsigned char bData, TSearchData *pSearchData);
+	static CFsmTest::TFindingsList ProcessByte(const unsigned char bData, TSearchData *pSearchData);
+	static unsigned int ProcessByteIdle(const unsigned char bData, TSearchData *pSearchData);
 };
 
 CFsmTest::CNibbleFsmSearch::TSearchData CFsmTest::CNibbleFsmSearch::InitEngine(const TPatterns &patterns) {
@@ -768,9 +775,9 @@ CFsmTest::SFsmStatistics CFsmTest::CNibbleFsmSearch::GetFsmStatistics(const CFsm
 	return stats;
 }
 
-unsigned int CFsmTest::CNibbleFsmSearch::ProcessByteCheckLength(const unsigned char bData, CFsmTest::CNibbleFsmSearch::TSearchData *pSearchData) {
+CFsmTest::TFindingsList CFsmTest::CNibbleFsmSearch::ProcessByte(const unsigned char bData, CFsmTest::CNibbleFsmSearch::TSearchData *pSearchData) {
 	// process the two nibbles of the byte
-	unsigned int cHits = 0;
+	TFindingsList result;
 
 	// Higher nibble
 	unsigned int dwOut = pSearchData->wrap.fsm.PushByte(HiNibble(bData));
@@ -778,7 +785,12 @@ unsigned int CFsmTest::CNibbleFsmSearch::ProcessByteCheckLength(const unsigned c
 	while (dwOut != TNibbleSearchFsm::sm_outputNull) {
 		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 		if (out.stepBack <= pSearchData->dwBits) { // enough data
-			cHits++;
+			SFinding finding;
+			finding.nPatternIdx = out.patternIdx;
+			finding.nErrors = out.errorsCount;
+			unsigned int dwPosition = pSearchData->dwBits - out.stepBack;
+			finding.dwPosition = dwPosition;
+			result << finding;
 		}
 		dwOut = out.idxNextOutput;
 	}
@@ -788,15 +800,21 @@ unsigned int CFsmTest::CNibbleFsmSearch::ProcessByteCheckLength(const unsigned c
 	while (dwOut != TNibbleSearchFsm::sm_outputNull) {
 		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 		if (out.stepBack <= pSearchData->dwBits) { // enough data
-			cHits++;
+			SFinding finding;
+			finding.nPatternIdx = out.patternIdx;
+			finding.nErrors = out.errorsCount;
+			unsigned int dwPosition = pSearchData->dwBits - out.stepBack;
+			finding.dwPosition = dwPosition;
+			result << finding;
 		}
 		dwOut = out.idxNextOutput;
 	}
 
-	return cHits;
+	return result;
+
 }
 
-unsigned int CFsmTest::CNibbleFsmSearch::ProcessByte(const unsigned char bData, CFsmTest::CNibbleFsmSearch::TSearchData *pSearchData) {
+unsigned int CFsmTest::CNibbleFsmSearch::ProcessByteIdle(const unsigned char bData, CFsmTest::CNibbleFsmSearch::TSearchData *pSearchData) {
 	// process the two nibbles of the byte
 	unsigned int cHits = 0;
 
@@ -835,8 +853,8 @@ public: // initialization & statictics
 	static CFsmTest::SFsmStatistics GetFsmStatistics(const TSearchData &data);
 
 public: // working methods
-	static unsigned int ProcessByteCheckLength(const unsigned char bData, TSearchData *pSearchData);
-	static unsigned int ProcessByte(const unsigned char bData, TSearchData *pSearchData);
+	static CFsmTest::TFindingsList ProcessByte(const unsigned char bData, TSearchData *pSearchData);
+	static unsigned int ProcessByteIdle(const unsigned char bData, TSearchData *pSearchData);
 };
 
 CFsmTest::COctetFsmSearch::TSearchData CFsmTest::COctetFsmSearch::InitEngine(const TPatterns &patterns) {
@@ -863,23 +881,28 @@ CFsmTest::SFsmStatistics CFsmTest::COctetFsmSearch::GetFsmStatistics(const CFsmT
 	return stats;
 }
 
-unsigned int CFsmTest::COctetFsmSearch::ProcessByteCheckLength(const unsigned char bData, CFsmTest::COctetFsmSearch::TSearchData *pSearchData) {
+CFsmTest::TFindingsList CFsmTest::COctetFsmSearch::ProcessByte(const unsigned char bData, CFsmTest::COctetFsmSearch::TSearchData *pSearchData) {
 	// process the byte at once
-	unsigned int cHits = 0;
+	TFindingsList result;
 	unsigned int dwOut = pSearchData->wrap.fsm.PushByte(bData);
 	pSearchData->dwBits += g_nByteLength;
 	while (dwOut != TNibbleSearchFsm::sm_outputNull) {
 		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 		if (out.stepBack <= pSearchData->dwBits) { // enough data
-			cHits++;
+			SFinding finding;
+			finding.nPatternIdx = out.patternIdx;
+			finding.nErrors = out.errorsCount;
+			unsigned int dwPosition = pSearchData->dwBits - out.stepBack;
+			finding.dwPosition = dwPosition;
+			result << finding;
 		}
 		dwOut = out.idxNextOutput;
 	}
 
-	return cHits;
+	return result;
 }
 
-unsigned int CFsmTest::COctetFsmSearch::ProcessByte(const unsigned char bData, CFsmTest::COctetFsmSearch::TSearchData *pSearchData) {
+unsigned int CFsmTest::COctetFsmSearch::ProcessByteIdle(const unsigned char bData, CFsmTest::COctetFsmSearch::TSearchData *pSearchData) {
 	// process the byte at once
 	unsigned int cHits = 0;
 	unsigned int dwOut = pSearchData->wrap.fsm.PushByte(bData);
@@ -911,8 +934,8 @@ public: // initialization & statictics
 	static CFsmTest::SFsmStatistics GetFsmStatistics(const TSearchData &data);
 
 public: // working methods
-	static unsigned int ProcessByteCheckLength(const unsigned char bData, TSearchData *pSearchData);
-	static unsigned int ProcessByte(const unsigned char bData, TSearchData *pSearchData);
+	static CFsmTest::TFindingsList ProcessByte(const unsigned char bData, TSearchData *pSearchData);
+	static unsigned int ProcessByteIdle(const unsigned char bData, TSearchData *pSearchData);
 };
 
 CFsmTest::CRegisterSearch::TSearchData CFsmTest::CRegisterSearch::InitEngine(const TPatterns &patterns) {
@@ -935,8 +958,8 @@ unsigned int CFsmTest::CRegisterSearch::GetMemoryRequirements(const CFsmTest::CR
 	return data.reg.RequiredMemorySize();
 }
 
-unsigned int CFsmTest::CRegisterSearch::ProcessByteCheckLength(const unsigned char bData, CFsmTest::CRegisterSearch::TSearchData *pSearchData) {
-	unsigned int cHits = 0;
+CFsmTest::TFindingsList CFsmTest::CRegisterSearch::ProcessByte(const unsigned char bData, CFsmTest::CRegisterSearch::TSearchData *pSearchData) {
+	TFindingsList result;
 	int nBit;
 	for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {
 		// obtain next bit
@@ -947,19 +970,25 @@ unsigned int CFsmTest::CRegisterSearch::ProcessByteCheckLength(const unsigned ch
 		pSearchData->dwBits++;
 		unsigned int dwPatternIdx;
 		for (dwPatternIdx = 0; dwPatternIdx < pSearchData->dwPatternsCount; dwPatternIdx++) {
-			if (pSearchData->reg.TestPattern(pSearchData->patterns[dwPatternIdx])) {
+			unsigned int dwErrors = 0;
+			if (pSearchData->reg.TestPattern(pSearchData->patterns[dwPatternIdx], &dwErrors)) {
 				unsigned int dwPatternLength = pSearchData->initialPatterns[dwPatternIdx].nLength;
 				if (dwPatternLength <= pSearchData->dwBits) { // register is full
-					cHits++;
+					SFinding finding;
+					finding.nPatternIdx = dwPatternIdx;
+					finding.nErrors = dwErrors;
+					unsigned int dwPosition = pSearchData->dwBits - dwPatternLength;
+					finding.dwPosition = dwPosition;
+					result << finding;
 				}
 			}
 		}
 	}
 
-	return cHits;
+	return result;
 }
 
-unsigned int CFsmTest::CRegisterSearch::ProcessByte(const unsigned char bData, CFsmTest::CRegisterSearch::TSearchData *pSearchData) {
+unsigned int CFsmTest::CRegisterSearch::ProcessByteIdle(const unsigned char bData, CFsmTest::CRegisterSearch::TSearchData *pSearchData) {
 	unsigned int cHits = 0;
 	int nBit;
 	for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {

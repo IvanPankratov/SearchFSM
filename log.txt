@@ -451,3 +451,10 @@ Refactoring & clen-up: TestEngine renamed to TestEnginePerformance, some obsolet
 CFsmTest: GetCollisionsCount, GetStatesCount, GetOutputElementsCount, GetTableSize,
 GetMinimalTableSize, GetNibbleTableSize, GetByteTableSize и несколько членов.
 Сгруппировал методы тестирования производительности поисковых механизмов.
+-
+Refactoring test engine classes: ProcessByte and ProcessByteIdle
+Переделал классы поисковых механизмов: теперь метод ProcessByte называется ProcessByteIdle и,
+по-прежнему, возвращает только количество "находок" и не проверяет длину обработанного потока
+данных, а метод ProcessByteCheckLength теперь как раз называется ProcessByte и возвращает список
+"находок" и проверяет длину.
+Это позволит удобно реализовать шаблонное тестирование механизмов при помощи метода ProcessByte.
