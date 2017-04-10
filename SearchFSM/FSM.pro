@@ -25,5 +25,6 @@ HEADERS += \
 	SearchFsm.h \
 	FsmCreator.h \
 	FsmTest.h \
+	SearchEngines.h \
 	ShiftRegister.h \
 	WinTimer.h

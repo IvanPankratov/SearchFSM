@@ -458,3 +458,7 @@ Refactoring test engine classes: ProcessByte and ProcessByteIdle
 данных, а метод ProcessByteCheckLength теперь как раз называется ProcessByte и возвращает список
 "находок" и проверяет длину.
 Это позволит удобно реализовать шаблонное тестирование механизмов при помощи метода ProcessByte.
+-
+Correctness test is based on search engine classes in SearchEngines.h
+Классы, описывающие поисковые механизмы вынесены в файл SearchEngines.h.
+Метод тестирования корректности полностью переделан на использование этих классов.
