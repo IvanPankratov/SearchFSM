@@ -137,7 +137,7 @@ public: // working methods
 		return m_state;
 	}
 
-	const typename TSearchFsm::SOutput& GetOutput(TOutputIdx idxOutput) const {
+	const TOutput& GetOutput(TOutputIdx idxOutput) const {
 		ASSERT(idxOutput<m_table.outputsCount);
 		return m_table.pOutputs[idxOutput];
 	}

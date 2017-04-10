@@ -8,7 +8,7 @@
 class CFsmTest::CBitFsmSearch {
 public: // data
 	struct TSearchData {
-		CFsmCreator::SFsmWrap<TSearchFsm> wrap;
+		CFsmCreator::SFsmWrap<CFsmTest::TBitSearchFsm> wrap;
 		unsigned int dwCollisionsCount;
 		unsigned int dwBits;
 	};
@@ -28,7 +28,7 @@ public: // working methods
 CFsmTest::CBitFsmSearch::TSearchData CFsmTest::CBitFsmSearch::InitEngine(const TPatterns &patterns) {
 	CFsmCreator fsm(patterns);
 	fsm.GenerateTables();
-	TSearchData data = {fsm.CreateFsmWrap<TSearchFsm>(), fsm.GetCollisionsCount(), 0};
+	TSearchData data = {fsm.CreateFsmWrap<TBitSearchFsm>(), fsm.GetCollisionsCount(), 0};
 	data.wrap.fsm.Reset();
 
 	return data;
@@ -59,8 +59,8 @@ CFsmTest::TFindingsList CFsmTest::CBitFsmSearch::ProcessByte(const unsigned char
 		// process bit by FSM
 		unsigned int dwOut = pSearchData->wrap.fsm.PushBit(bBit);
 		pSearchData->dwBits++;
-		while (dwOut != TSearchFsm::sm_outputNull) {
-			const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
+		while (dwOut != TBitSearchFsm::sm_outputNull) {
+			const TBitSearchFsm::TOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 			if (out.stepBack <= pSearchData->dwBits) { // enough data
 				SFinding finding;
 				finding.nPatternIdx = out.patternIdx;
@@ -86,9 +86,9 @@ unsigned int CFsmTest::CBitFsmSearch::ProcessByteIdle(const unsigned char bData,
 
 		// process bit by FSM
 		unsigned int dwOut = pSearchData->wrap.fsm.PushBit(bBit);
-		while (dwOut != TSearchFsm::sm_outputNull) {
+		while (dwOut != TBitSearchFsm::sm_outputNull) {
 			cHits++;
-			const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
+			const TBitSearchFsm::TOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 			dwOut = out.idxNextOutput;
 		}
 	}
@@ -150,7 +150,7 @@ CFsmTest::TFindingsList CFsmTest::CNibbleFsmSearch::ProcessByte(const unsigned c
 	unsigned int dwOut = pSearchData->wrap.fsm.PushByte(HiNibble(bData));
 	pSearchData->dwBits += g_nNibbleLength;
 	while (dwOut != TNibbleSearchFsm::sm_outputNull) {
-		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
+		const TNibbleSearchFsm::TOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 		if (out.stepBack <= pSearchData->dwBits) { // enough data
 			SFinding finding;
 			finding.nPatternIdx = out.patternIdx;
@@ -165,7 +165,7 @@ CFsmTest::TFindingsList CFsmTest::CNibbleFsmSearch::ProcessByte(const unsigned c
 	dwOut = pSearchData->wrap.fsm.PushByte(LoNibble(bData));
 	pSearchData->dwBits += g_nNibbleLength;
 	while (dwOut != TNibbleSearchFsm::sm_outputNull) {
-		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
+		const TNibbleSearchFsm::TOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 		if (out.stepBack <= pSearchData->dwBits) { // enough data
 			SFinding finding;
 			finding.nPatternIdx = out.patternIdx;
@@ -188,14 +188,14 @@ unsigned int CFsmTest::CNibbleFsmSearch::ProcessByteIdle(const unsigned char bDa
 	// Higher nibble
 	unsigned int dwOut = pSearchData->wrap.fsm.PushByte(HiNibble(bData));
 	while (dwOut != TNibbleSearchFsm::sm_outputNull) {
-		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
+		const TNibbleSearchFsm::TOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 		cHits++;
 		dwOut = out.idxNextOutput;
 	}
 	// Lowwer nibble
 	dwOut = pSearchData->wrap.fsm.PushByte(LoNibble(bData));
 	while (dwOut != TNibbleSearchFsm::sm_outputNull) {
-		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
+		const TNibbleSearchFsm::TOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 		cHits++;
 		dwOut = out.idxNextOutput;
 	}
@@ -254,8 +254,8 @@ CFsmTest::TFindingsList CFsmTest::COctetFsmSearch::ProcessByte(const unsigned ch
 	TFindingsList result;
 	unsigned int dwOut = pSearchData->wrap.fsm.PushByte(bData);
 	pSearchData->dwBits += g_nByteLength;
-	while (dwOut != TNibbleSearchFsm::sm_outputNull) {
-		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
+	while (dwOut != TOctetSearchFsm::sm_outputNull) {
+		const TOctetSearchFsm::TOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 		if (out.stepBack <= pSearchData->dwBits) { // enough data
 			SFinding finding;
 			finding.nPatternIdx = out.patternIdx;
@@ -274,8 +274,8 @@ unsigned int CFsmTest::COctetFsmSearch::ProcessByteIdle(const unsigned char bDat
 	// process the byte at once
 	unsigned int cHits = 0;
 	unsigned int dwOut = pSearchData->wrap.fsm.PushByte(bData);
-	while (dwOut != TNibbleSearchFsm::sm_outputNull) {
-		const TSearchFsm::SOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
+	while (dwOut != TOctetSearchFsm::sm_outputNull) {
+		const TOctetSearchFsm::TOutput &out = pSearchData->wrap.fsm.GetOutput(dwOut);
 		cHits++;
 		dwOut = out.idxNextOutput;
 	}

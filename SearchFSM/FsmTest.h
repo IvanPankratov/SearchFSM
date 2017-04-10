@@ -19,7 +19,7 @@ public:
 	static const int g_nByteLength = 8;
 
 	// FSM types
-	typedef CSearchFsm<TStateIdx, TOutputIdx> TSearchFsm;
+	typedef CSearchFsm<TStateIdx, TOutputIdx> TBitSearchFsm;
 	typedef CSearchFsmByte<g_nNibbleLength, TStateIdx, TOutputIdx> TNibbleSearchFsm;
 	typedef CSearchFsmByte<g_nByteLength, TStateIdx, TOutputIdx> TOctetSearchFsm;
 
@@ -78,11 +78,11 @@ public:
 	bool TestRegisterRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 
 public: // table size calculating methods
-	template <class TSearchFsm_>
-	static SFsmTableSize GetTableSize(const CFsmCreator::SFsmWrap<TSearchFsm_>& wrap);
+	template <class TSearchFsm>
+	static SFsmTableSize GetTableSize(const CFsmCreator::SFsmWrap<TSearchFsm>& wrap);
 
-	template <class TSearchFsm_>
-	static SFsmTableSize GetMinimalTableSize(const CFsmCreator::SFsmWrap<TSearchFsm_>& fsm);
+	template <class TSearchFsm>
+	static SFsmTableSize GetMinimalTableSize(const CFsmCreator::SFsmWrap<TSearchFsm>& fsm);
 
 private:
 	static SPatternsStats AnalysePatterns(const TPatterns& patterns);
@@ -107,7 +107,7 @@ private:
 
 	static bool AreEqual(const TFindingsList &list1, const TFindingsList &list2);
 	static bool AreEqual(const SFinding &finding1, const SFinding &finding2);
-	void DumpFinding(int nBitsProcessed, const TSearchFsm::SOutput &out);
+	void DumpFinding(int nBitsProcessed, const TBitSearchFsm::TOutput &out);
 
 private:
 	TPatterns m_patterns;

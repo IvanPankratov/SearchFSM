@@ -466,3 +466,10 @@ Correctness test is based on search engine classes in SearchEngines.h
 Clean-up CFsmTest: methods, members, typedefs
 Зачистил класс CFsmTest от всего лишнего.
 Теперь конструктор класса принимает набор шаблонов, автоматы не хранит, а пересоздаёт каждый раз.
+-
+Refactoring: LCGs to separate header, small fixes, functions order
+В CFsmTest TSearchFsm переименована в TBitSearchFsm.
+В классах поисковых механизмов теперь везде используются структуры именно соответствующего
+автомата, раньше были неточности.
+Порядок следования методов в файле FsmTest.cpp приведён в соответствие с заголовочным файлом.
+В классе CSearchFsmByte вместо typename TSearchFsm::SOutput теперь используется TOutput.
