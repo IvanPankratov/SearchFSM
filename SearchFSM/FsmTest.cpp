@@ -6,7 +6,7 @@
 #include "ShiftRegister.h"
 #include "WinTimer.h"
 
-class CLcg { // linear congruent generator, produces period 256 MiB
+class CLcg { // linear congruent generator, produces period 1 GiB
 public:
 	CLcg() {
 		Reset();
@@ -538,11 +538,15 @@ bool CFsmTest::TestEngine(unsigned int dwTestBytesCount, SEnginePerformance *pRe
 		unsigned int dwBytes;
 		for (dwBytes = 0; dwBytes < dwCheckLengthBytes; dwBytes++) {
 			unsigned char bData = lcg.RandomByte();
+			unsigned int dwMask = (int)cHits >> 31; // either all ones or null
 			cHits += TSearchEngine::ProcessByteCheckLength(bData, &searchData);
+			cHits |= dwMask;
 		}
 		for (; dwBytes < dwTestBytesCount; dwBytes++) {
 			unsigned char bData = lcg.RandomByte();
+			unsigned int dwMask = (int)cHits >> 31; // either all ones or null
 			cHits += TSearchEngine::ProcessByte(bData, &searchData);
+			cHits |= dwMask;
 		}
 		timer.Stop();
 		performance.timOperating = GetTimings(timer);

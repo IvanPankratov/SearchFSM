@@ -260,7 +260,7 @@ void DumpTestList(const TTestList &list) {
 	for (idx = 0; idx < list.count(); idx++) {
 		const STest &test = list[idx];
 		unsigned int dwHits = test.result.perfRegister.dwHits;
-		printf("\n%i\t%i\t%i\t%s\t%i\t", test.nPatternsLength, test.nPatternsCount, test.nErrorsCount, test.fMasked? "masked" : "no mask", dwHits);
+		printf("\n%i\t%i\t%i\t%s\t%u\t", test.nPatternsLength, test.nPatternsCount, test.nErrorsCount, test.fMasked? "masked" : "no mask", dwHits);
 		const STestResult &result = test.result;
 		DumpPerformance(result.perfRegister, dwHits, false);
 		DumpPerformance(result.perfFsm1, dwHits, true);
