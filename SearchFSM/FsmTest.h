@@ -74,14 +74,16 @@ public:
 
 public:
 	bool CreateFsm(const TPatterns &patterns, bool fCreateNibbleFsm, bool fCreateByteFsm, bool fVerbose = false);
-	unsigned int GetCollisionsCount() const;
 	bool TraceFsm(int nDataLength);
 	bool TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, /* out, optional */ unsigned int *pdwHits = NULL);
 
+	// test engines' performance
 	bool TestBitFsmRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 	bool TestNibbleFsmRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 	bool TestOctetFsmRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 	bool TestRegisterRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
+
+	// obsolete
 	void ReleaseFsm();
 
 public: // table size calculating methods
@@ -93,19 +95,11 @@ public: // table size calculating methods
 
 	static SPatternsStats AnalysePatterns(const TPatterns& patterns);
 
-public: // table size quering methods
-	unsigned int GetStatesCount() const {return m_rows.count();}
-	unsigned int GetOutputElementsCount() const {return m_dwFsmOutputsCount;}
-	SFsmTableSize GetTableSize() const;
-	SFsmTableSize GetMinimalTableSize() const; // using the shortest integral types
-	SFsmTableSize GetNibbleTableSize() const;
-	SFsmTableSize GetByteTableSize() const;
-
 private:
 	static unsigned int GetMinimalDataSize(unsigned int nMaxValue);
 
 	template <class TSearchEngine>
-	bool TestEngine(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
+	bool TestEnginePerformance(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 
 private:
 	class CBitFsmSearch;
@@ -137,8 +131,6 @@ private: // output table handling
 private:
 	TPatterns m_patterns;
 	int m_nMaxPatternLength;
-	int m_nMaxErrorsCount;
-	unsigned int m_dwCollisions;
 	unsigned int m_dwFsmOutputsCount;
 	unsigned int m_dwFsmNibbleOutputsCount;
 	TSearchFsm *m_pFsm;

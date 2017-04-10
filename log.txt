@@ -445,3 +445,9 @@ Fix-pack: LCG period updated, hits count overflow protection
 количество вхождений перевалит за 2^31, значение будет зафиксировано в 4294967295.
 Сделал вывод количества найденных вхождений беззнаковым чтобы предотвратить вывод отрицательных
 чисел.
+-
+Refactoring & clen-up: TestEngine renamed to TestEnginePerformance, some obsolete methods removed
+Переименовал TestEngine в TestEnginePerformance и удалил несколько устаревших методов из класса
+CFsmTest: GetCollisionsCount, GetStatesCount, GetOutputElementsCount, GetTableSize,
+GetMinimalTableSize, GetNibbleTableSize, GetByteTableSize и несколько членов.
+Сгруппировал методы тестирования производительности поисковых механизмов.

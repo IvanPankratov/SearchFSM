@@ -86,8 +86,6 @@ CFsmTest::STimeings GetTimings(const CWinTimer &timer) {
 
 CFsmTest::CFsmTest() {
 	m_nMaxPatternLength = 0;
-	m_nMaxErrorsCount = 0;
-	m_dwCollisions = 0;
 	m_dwFsmOutputsCount = 0;
 	m_pFsm = NULL;
 	m_pFsmNibble = NULL;
@@ -108,7 +106,6 @@ bool CFsmTest::CreateFsm(const TPatterns &patterns, bool fCreateNibbleFsm, bool 
 	// generate tables
 	CFsmCreator fsm(patterns);
 	fsm.GenerateTables(fVerbose);
-	m_dwCollisions = fsm.GetCollisionsCount();
 
 	// convert tables to format acceptable by SearchFSMs
 	TBitFsmTable rows(fsm.GetStatesCount());
@@ -195,10 +192,6 @@ bool CFsmTest::CreateFsm(const TPatterns &patterns, bool fCreateNibbleFsm, bool 
 	}
 
 	return true;
-}
-
-unsigned int CFsmTest::GetCollisionsCount() const {
-	return m_dwCollisions;
 }
 
 bool CFsmTest::TraceFsm(int nDataLength) {
@@ -325,19 +318,19 @@ bool CFsmTest::TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, un
 }
 
 bool CFsmTest::TestBitFsmRate(unsigned int dwTestBytesCount, CFsmTest::SEnginePerformance *pResult) {
-	return TestEngine<CBitFsmSearch>(dwTestBytesCount, pResult);
+	return TestEnginePerformance<CBitFsmSearch>(dwTestBytesCount, pResult);
 }
 
 bool CFsmTest::TestNibbleFsmRate(unsigned int dwTestBytesCount, CFsmTest::SEnginePerformance *pResult) {
-	return TestEngine<CNibbleFsmSearch>(dwTestBytesCount, pResult);
+	return TestEnginePerformance<CNibbleFsmSearch>(dwTestBytesCount, pResult);
 }
 
 bool CFsmTest::TestOctetFsmRate(unsigned int dwTestBytesCount, CFsmTest::SEnginePerformance *pResult) {
-	return TestEngine<COctetFsmSearch>(dwTestBytesCount, pResult);
+	return TestEnginePerformance<COctetFsmSearch>(dwTestBytesCount, pResult);
 }
 
 bool CFsmTest::TestRegisterRate(unsigned int dwTestBytesCount, CFsmTest::SEnginePerformance *pResult) {
-	return TestEngine<CRegisterSearch>(dwTestBytesCount, pResult);
+	return TestEnginePerformance<CRegisterSearch>(dwTestBytesCount, pResult);
 }
 
 void CFsmTest::ReleaseFsm() {
@@ -437,66 +430,6 @@ CFsmTest::SFsmTableSize CFsmTest::GetMinimalTableSize(const CFsmCreator::SFsmWra
 	return size;
 }
 
-// table size quering methods
-CFsmTest::SFsmTableSize CFsmTest::GetTableSize() const {
-	SFsmTableSize size;
-	size.dwMainTableSize = m_rows.count() * sizeof(TBitFsmTable::value_type);
-	size.dwOutputTableSize = m_dwFsmOutputsCount * sizeof(TOutputTable::value_type);
-	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(TSearchFsm::STable);
-
-	return size;
-}
-
-CFsmTest::SFsmTableSize CFsmTest::GetMinimalTableSize() const {
-	SFsmTableSize size;
-
-//	struct STableCell {
-//		TStateIdx idxNextState;
-//		TOutputIdx idxOutput;
-//	};
-	unsigned int dwStateIndexSize = GetMinimalDataSize(m_rows.count() - 1);
-	// mustn't forget about CSearchFsm::sm_outputNull
-	unsigned int dwOutputIndexSize = GetMinimalDataSize(m_dwFsmOutputsCount);
-	// table cell contains next state index and output index, and
-	unsigned int dwTableCellSize = dwStateIndexSize + dwOutputIndexSize;
-	unsigned int dwRowSize = dwTableCellSize * 2;
-	size.dwMainTableSize = m_rows.count() * dwRowSize;
-
-//	struct SOutput {
-//		TPatternIdx patternIdx;
-//		TStepBack stepBack;
-//		TErrorsCount errorsCount;
-//		TOutputIdx idxNextOutput;
-//	};
-	unsigned int dwPatternIdxSize = GetMinimalDataSize(m_patterns.count() - 1);
-	unsigned int dwStepBackSize = GetMinimalDataSize(m_nMaxPatternLength);
-	unsigned int dwErrorsSize = GetMinimalDataSize(m_nMaxErrorsCount);
-	unsigned int dwOutputCellSize = dwPatternIdxSize + dwStepBackSize + dwErrorsSize + dwOutputIndexSize;
-
-	size.dwOutputTableSize = m_dwFsmOutputsCount * dwOutputCellSize;
-	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(TSearchFsm::STable);
-
-	return size;
-}
-
-CFsmTest::SFsmTableSize CFsmTest::GetNibbleTableSize() const {
-	SFsmTableSize size;
-	size.dwMainTableSize = m_rowsNibble.count() * sizeof(TNibbleFsmTable::value_type);
-	size.dwOutputTableSize = m_dwFsmNibbleOutputsCount * sizeof(TOutputTable::value_type);
-	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(TNibbleSearchFsm::STable);
-
-	return size;
-}
-
-CFsmTest::SFsmTableSize CFsmTest::GetByteTableSize() const {
-	SFsmTableSize size;
-	size.dwMainTableSize = m_rowsByte.count() * sizeof(TOctetFsmTable::value_type);
-	size.dwOutputTableSize = m_outputs.count() * sizeof(TOutputTable::value_type);
-	size.dwTotalSize = size.dwMainTableSize + size.dwOutputTableSize + sizeof(TOctetSearchFsm::STable);
-
-	return size;
-}
-
 // private
 unsigned int CFsmTest::GetMinimalDataSize(unsigned int nMaxValue) {
 	if (nMaxValue <= 0xff) { // single-byte integer is enough
@@ -511,7 +444,7 @@ unsigned int CFsmTest::GetMinimalDataSize(unsigned int nMaxValue) {
 }
 
 template <class TSearchEngine>
-bool CFsmTest::TestEngine(unsigned int dwTestBytesCount, SEnginePerformance *pResult) {
+bool CFsmTest::TestEnginePerformance(unsigned int dwTestBytesCount, SEnginePerformance *pResult) {
 	try {
 		// prepare engine
 		CWinTimer timer;
@@ -652,22 +585,15 @@ void CFsmTest::DumpFinding(int nBitsProcessed, const TSearchFsm::SOutput &out) {
 
 void CFsmTest::AnalysePatterns() {
 	int nMaxPatternLength = 0;
-	int nMaxErrorsCount = 0;
 	int idx;
 	for (idx = 0; idx < m_patterns.count(); idx++) {
 		int nLength = m_patterns[idx].nLength;
 		if (nMaxPatternLength < nLength) {
 			nMaxPatternLength = nLength;
 		}
-
-		int nErrorsCount = m_patterns[idx].nMaxErrors;
-		if (nMaxErrorsCount < nErrorsCount) {
-			nMaxErrorsCount = nErrorsCount;
-		}
 	}
 
 	m_nMaxPatternLength = nMaxPatternLength;
-	m_nMaxErrorsCount = nMaxErrorsCount;
 }
 
 // output table handling
