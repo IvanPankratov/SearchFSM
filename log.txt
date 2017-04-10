@@ -462,3 +462,7 @@ Refactoring test engine classes: ProcessByte and ProcessByteIdle
 Correctness test is based on search engine classes in SearchEngines.h
 Классы, описывающие поисковые механизмы вынесены в файл SearchEngines.h.
 Метод тестирования корректности полностью переделан на использование этих классов.
+-
+Clean-up CFsmTest: methods, members, typedefs
+Зачистил класс CFsmTest от всего лишнего.
+Теперь конструктор класса принимает набор шаблонов, автоматы не хранит, а пересоздаёт каждый раз.

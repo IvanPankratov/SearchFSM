@@ -84,140 +84,39 @@ CFsmTest::STimeings GetTimings(const CWinTimer &timer) {
 	return results;
 }
 
-CFsmTest::CFsmTest() {
-	m_nMaxPatternLength = 0;
-	m_dwFsmOutputsCount = 0;
-	m_pFsm = NULL;
-	m_pFsmNibble = NULL;
-	m_pFsmByte = NULL;
-}
-
-CFsmTest::~CFsmTest() {
-	ReleaseFsm();
-}
-
-bool CFsmTest::CreateFsm(const TPatterns &patterns, bool fCreateNibbleFsm, bool fCreateByteFsm, bool fVerbose) {
-	ReleaseFsm();
-
-	// store the patterns for the future
+CFsmTest::CFsmTest(const TPatterns &patterns) {
 	m_patterns = patterns;
-	AnalysePatterns();
+}
 
+CFsmTest::~CFsmTest() {}
+
+bool CFsmTest::CreateFsm(bool fVerbose) {
 	// generate tables
-	CFsmCreator fsm(patterns);
-	fsm.GenerateTables(fVerbose);
-
-	// convert tables to format acceptable by SearchFSMs
-	TBitFsmTable rows(fsm.GetStatesCount());
-	TOutputTable outputs;
-	int nRow;
-	for (nRow = 0; nRow < fsm.GetStatesCount(); nRow++) {
-		CFsmCreator::STableRow row = fsm.GetTableRow(nRow);
-		TSearchFsm::STableCell cell0;
-		cell0.idxNextState = row.cell0.nNextState;
-		TOutputIdx idxOutput0 = StoreOutputList(row.cell0.output, &outputs);
-		cell0.idxOutput = idxOutput0;
-
-		TSearchFsm::STableCell cell1;
-		cell1.idxNextState = row.cell1.nNextState;
-		TOutputIdx idxOutput1 = StoreOutputList(row.cell1.output, &outputs);
-		cell1.idxOutput = idxOutput1;
-
-		TSearchFsm::STableRow fsmRow = {cell0, cell1};
-		rows[nRow] = fsmRow;
-	}
-
-	// remember bit SearchFSM outputs count
-	m_dwFsmOutputsCount = outputs.count();
-
-	// create nibble SearchFSM
-	TNibbleFsmTable rowsNibble;
-	if (fCreateNibbleFsm) {
-		rowsNibble.resize(fsm.GetStatesCount());
-		CFsmCreator::TByteTable fsmNibble = fsm.CreateByteTable(g_nNibbleLength);
-		for (nRow = 0; nRow < fsm.GetStatesCount(); nRow++) {
-			const CFsmCreator::SByteTableRow &rowNibble = fsmNibble.rows[nRow];
-			int nColumn;
-			for (nColumn = 0; nColumn < rowNibble.cells.count(); nColumn++) {
-				TSearchFsm::STableCell *pCell = &rowsNibble[nRow].cells[nColumn];
-				CFsmCreator::STableCell &cell = fsmNibble.rows[nRow].cells[nColumn];
-				pCell->idxNextState = cell.nNextState;
-				pCell->idxOutput = StoreOutputList(cell.output, &outputs);
-			}
-		}
-	}
-	m_dwFsmNibbleOutputsCount = outputs.count();
-
-	// create byte SearchFSM
-	TOctetFsmTable rowsByte;
-	if (fCreateByteFsm) {
-		rowsByte.resize(fsm.GetStatesCount());
-		CFsmCreator::TByteTable fsmByte = fsm.CreateByteTable(g_nByteLength);
-		for (nRow = 0; nRow < fsm.GetStatesCount(); nRow++) {
-			const CFsmCreator::SByteTableRow &rowByte = fsmByte.rows[nRow];
-			int nColumn;
-			for (nColumn = 0; nColumn < rowByte.cells.count(); nColumn++) {
-				TSearchFsm::STableCell *pCell = &rowsByte[nRow].cells[nColumn];
-				CFsmCreator::STableCell &cell = fsmByte.rows[nRow].cells[nColumn];
-				pCell->idxNextState = cell.nNextState;
-				pCell->idxOutput = StoreOutputList(cell.output, &outputs);
-			}
-		}
-	}
-
-	// release redundant memory
-	ASSERT(rows.capacity() == rows.count());
-	outputs.squeeze();
-
-	// store the tables (with const_cast to disable write-protection)
-	const_cast<TBitFsmTable&>(m_rows) = rows;
-	const_cast<TNibbleFsmTable&>(m_rowsNibble) = rowsNibble;
-	const_cast<TOctetFsmTable&>(m_rowsByte) = rowsByte;
-	const_cast<TOutputTable&>(m_outputs) = outputs;
-
-	// create the structure describing bit SearchFSM table
-	unsigned int dwRows = rows.count();
-	unsigned int dwOutputs = outputs.count();
-	TSearchFsm::STable table = {m_rows.constData(), m_outputs.constData(), dwRows, m_dwFsmOutputsCount};
-	m_pFsm = new TSearchFsm(table);
-
-	// the same for Nibble SearchFSM and byte SearchFSM if requested
-	if (fCreateNibbleFsm) {
-		TNibbleSearchFsm::STable tableNibble = {m_rowsNibble.constData(), m_outputs.constData(), dwRows, m_dwFsmNibbleOutputsCount};
-		m_pFsmNibble = new TNibbleSearchFsm(tableNibble);
-	}
-	if (fCreateByteFsm) {
-		TOctetSearchFsm::STable tableByte = {m_rowsByte.constData(), m_outputs.constData(), dwRows, dwOutputs};
-		m_pFsmByte = new TOctetSearchFsm(tableByte);
-	}
-
-	return true;
+	CFsmCreator fsm(m_patterns);
+	return fsm.GenerateTables(fVerbose);
 }
 
 bool CFsmTest::TraceFsm(int nDataLength) {
-	if (m_pFsm == NULL) {
-		return false;
-	}
+	CFsmCreator fsm(m_patterns);
+	fsm.GenerateTables();
+	CFsmCreator::SFsmWrap<TSearchFsm> wrap = fsm.CreateFsmWrap<TSearchFsm>();
 
-	m_pFsm->Reset();
 	CDoubleLcg lcg;
-
 	unsigned char bData = 0;
 	int idx;
 	for (idx = 0; idx < nDataLength; idx++) {
-		int nState = m_pFsm->GetState();
+		int nState = wrap.fsm.GetState();
 		int nBit = idx % 8;
 		if (nBit == 0) { // new byte begins => update bData
 			bData = lcg.RandomByte();
-//			printf("0x%02x ", bData); // debug dumping
 		}
 		unsigned char bBit = GetHiBit(bData, nBit);
-		unsigned int nOut = m_pFsm->PushBit(bBit);
-		printf("%i: %i =%i=> %i", idx, nState, bBit, m_pFsm->GetState());
+		unsigned int nOut = wrap.fsm.PushBit(bBit);
+		printf("%i: %i =%i=> %i", idx, nState, bBit, wrap.fsm.GetState());
 		if (nOut != TSearchFsm::sm_outputNull) {
 			printf(" found ");
 			while (nOut != TSearchFsm::sm_outputNull) {
-				const TSearchFsm::SOutput &out = m_pFsm->GetOutput(nOut);
+				const TSearchFsm::SOutput &out = wrap.fsm.GetOutput(nOut);
 				DumpFinding(idx + 1, out);
 				nOut = out.idxNextOutput;
 			}
@@ -232,6 +131,7 @@ bool CFsmTest::TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, un
 	// prepare engines (register and bit SearchFSM - must be created, Nibble and octet SearchFSM - try)
 	CRegisterSearch::TSearchData searchDataRegister = CRegisterSearch::InitEngine(m_patterns);
 	CBitFsmSearch::TSearchData searchDataBitFsm = CBitFsmSearch::InitEngine(m_patterns);
+
 	CNibbleFsmSearch::TSearchData *pSearchDataNibbleFsm = NULL;
 	try {
 		pSearchDataNibbleFsm = new CNibbleFsmSearch::TSearchData(CNibbleFsmSearch::InitEngine(m_patterns));
@@ -263,7 +163,6 @@ bool CFsmTest::TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, un
 
 		if (!AreEqual(finBitFsm, finReg)) {
 			puts("FAIL! Bit SearchFSM != Test register!");
-//			printf("FAIL! At %i, pattern #%i, FSM = %i errors, register = %i errors)\n", dwPosition, idx, nErrorsFsm, nErrors);
 			fCorrect = false;
 		}
 
@@ -315,23 +214,6 @@ bool CFsmTest::TestOctetFsmRate(unsigned int dwTestBytesCount, CFsmTest::SEngine
 
 bool CFsmTest::TestRegisterRate(unsigned int dwTestBytesCount, CFsmTest::SEnginePerformance *pResult) {
 	return TestEnginePerformance<CRegisterSearch>(dwTestBytesCount, pResult);
-}
-
-void CFsmTest::ReleaseFsm() {
-	if (m_pFsm != NULL) {
-		delete m_pFsm;
-		m_pFsm = NULL;
-	}
-
-	if (m_pFsmNibble != NULL) {
-		delete m_pFsmNibble;
-		m_pFsmNibble = NULL;
-	}
-
-	if (m_pFsmByte != NULL) {
-		delete m_pFsmByte;
-		m_pFsmByte = NULL;
-	}
 }
 
 CFsmTest::SPatternsStats CFsmTest::AnalysePatterns(const TPatterns &patterns) {
@@ -443,7 +325,7 @@ bool CFsmTest::TestEnginePerformance(unsigned int dwTestBytesCount, SEnginePerfo
 		}
 
 		// preparing the test
-		unsigned int dwCheckLengthBytes = m_nMaxPatternLength / BITS_IN_BYTE + 1;
+		unsigned int dwCheckLengthBytes = AnalysePatterns(m_patterns).nMaxLength / BITS_IN_BYTE + 1;
 		if (dwTestBytesCount < dwCheckLengthBytes) {
 			dwCheckLengthBytes = dwTestBytesCount;
 		}
@@ -482,60 +364,6 @@ bool CFsmTest::TestEnginePerformance(unsigned int dwTestBytesCount, SEnginePerfo
 	return true;
 }
 
-CFsmTest::TFindingsList CFsmTest::ProcessBitByFsm(unsigned int dwProcessedBits, unsigned char bBit) {
-	TFindingsList findingsList;
-
-	unsigned int dwOut = m_pFsm->PushBit(bBit);
-	while (dwOut != TSearchFsm::sm_outputNull) {
-		const TSearchFsm::SOutput &out = m_pFsm->GetOutput(dwOut);
-		unsigned int dwPosition = dwProcessedBits - out.stepBack;
-		SFinding finding;
-		finding.nPatternIdx = out.patternIdx;
-		finding.nErrors = out.errorsCount;
-		finding.dwPosition = dwPosition;
-		findingsList << finding;
-		dwOut = out.idxNextOutput;
-	}
-
-	return findingsList;
-}
-
-CFsmTest::TFindingsList CFsmTest::ProcessNibbleByFsm(unsigned int dwProcessedBits, unsigned char bNibble) {
-	TFindingsList findingsList;
-
-	unsigned int dwOut = m_pFsmNibble->PushByte(bNibble);
-	while (dwOut != TNibbleSearchFsm::sm_outputNull) {
-		const TNibbleSearchFsm::TOutput &out = m_pFsmNibble->GetOutput(dwOut);
-		unsigned int dwPosition = dwProcessedBits - out.stepBack;
-		SFinding finding;
-		finding.nPatternIdx = out.patternIdx;
-		finding.nErrors = out.errorsCount;
-		finding.dwPosition = dwPosition;
-		findingsList << finding;
-		dwOut = out.idxNextOutput;
-	}
-
-	return findingsList;
-}
-
-CFsmTest::TFindingsList CFsmTest::ProcessByteByFsm(unsigned int dwProcessedBits, unsigned char bData) {
-	TFindingsList findingsList;
-
-	unsigned int dwOut = m_pFsmByte->PushByte(bData);
-	while (dwOut != TOctetSearchFsm::sm_outputNull) {
-		const TOctetSearchFsm::TOutput &out = m_pFsmByte->GetOutput(dwOut);
-		unsigned int dwPosition = dwProcessedBits - out.stepBack;
-		SFinding finding;
-		finding.nPatternIdx = out.patternIdx;
-		finding.nErrors = out.errorsCount;
-		finding.dwPosition = dwPosition;
-		findingsList << finding;
-		dwOut = out.idxNextOutput;
-	}
-
-	return findingsList;
-}
-
 bool CFsmTest::AreEqual(const TFindingsList &list1, const TFindingsList &list2) {
 	if (list1.count() != list2.count()) {
 		return false;
@@ -567,55 +395,3 @@ void CFsmTest::DumpFinding(int nBitsProcessed, const TSearchFsm::SOutput &out) {
 		printf(", ");
 	}
 }
-
-void CFsmTest::AnalysePatterns() {
-	int nMaxPatternLength = 0;
-	int idx;
-	for (idx = 0; idx < m_patterns.count(); idx++) {
-		int nLength = m_patterns[idx].nLength;
-		if (nMaxPatternLength < nLength) {
-			nMaxPatternLength = nLength;
-		}
-	}
-
-	m_nMaxPatternLength = nMaxPatternLength;
-}
-
-// output table handling
-CFsmTest::TOutputIdx CFsmTest::StoreOutputList(const CFsmCreator::TOutputList &outputList, CFsmTest::TOutputTable *pOutputTable) {
-	if (outputList.isEmpty()) {
-		return TSearchFsm::sm_outputNull;
-	}
-
-	int idx;
-	TOutputIdx idxNext = TSearchFsm::sm_outputNull;
-	for (idx = outputList.count() - 1; idx >= 0; idx--) {
-		CFsmCreator::SOutput out = outputList[idx];
-		TSearchFsm::SOutput outputNew;
-		outputNew.patternIdx = out.nPatternIdx;
-		outputNew.errorsCount = out.nErrors;
-		outputNew.stepBack = out.nStepBack;
-		outputNew.idxNextOutput = idxNext;
-		idxNext = StoreOutput(outputNew, pOutputTable);
-	}
-
-	return idxNext;
-}
-
-CFsmTest::TOutputIdx CFsmTest::StoreOutput(const TSearchFsm::SOutput &output, CFsmTest::TOutputTable *pOutputTable) {
-	int idx;
-	for (idx = 0; idx < pOutputTable->count(); idx++) {
-		if (IsEqual(output, pOutputTable->at(idx))) {
-			return idx;
-		}
-	}
-
-	pOutputTable->push_back(output);
-	return pOutputTable->count() - 1;
-}
-
-bool CFsmTest::IsEqual(const TSearchFsm::SOutput &output1, const TSearchFsm::SOutput &output2) {
-	return (output1.patternIdx == output2.patternIdx) && (output1.errorsCount == output2.errorsCount) &&
-		(output1.stepBack == output2.stepBack) && (output1.idxNextOutput == output2.idxNextOutput);
-}
-

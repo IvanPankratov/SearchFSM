@@ -122,17 +122,9 @@ struct STestResult {
 };
 
 STestResult TestSpeed(const TPatterns patterns) {
-	CFsmTest tester;
-	printf("\nSearch engines for patterns:\n");
+	CFsmTest tester(patterns);
+	printf("\nPatterns for tests:\n");
 	PrintPatterns(patterns);
-	try {
-		tester.CreateFsm(patterns, false, false);
-	}
-	catch(...) {
-		puts("Failed to create bit SearchFSM!");
-		STestResult resultNo;
-		return resultNo;
-	}
 
 	printf("\nTest correctness...");
 	unsigned int dwHits;
