@@ -6,6 +6,7 @@
 #include <QList>
 #include <QVector>
 #include <QHash>
+#include <QSet>
 #include <QString>
 
 #include "Common.h"
@@ -61,6 +62,8 @@ public:
 
 public:
 	bool GenerateTables(bool fVerbose = false);
+	bool OptimizeTables(bool fVerbose = false);
+	QSet<int> FindUnessentialStates(bool fVerbose = false) const;
 	TByteTable CreateByteTable(int nBitsAtOnce, EBitOrder bitOrder = bitOrder_MsbFirst) const;
 	int GetStatesCount() const;
 	unsigned int GetCollisionsCount() const;

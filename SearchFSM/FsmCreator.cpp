@@ -2,6 +2,8 @@
 
 #include "FsmCreator.h"
 
+#include <QQueue>
+
 QString PatternToString(const SPattern &pattern) {
 	QString sPattern;
 	int nBit;
@@ -66,6 +68,86 @@ bool CFsmCreator::GenerateTables(bool fVerbose) {
 	m_idxStates.clear();
 
 	return true;
+}
+
+bool CFsmCreator::OptimizeTables(bool fVerbose) {
+	const int g_nNoState = -1; // index for states to be removed
+
+	QSet<int> nsUnessentialStates = FindUnessentialStates(fVerbose);
+	if (nsUnessentialStates.isEmpty()) { // no unessential states
+		return true;
+	}
+
+	// reindex essential states (for removing unessential ones)
+	int nState, nStatesCount = m_table.count();
+	QVector<int> nsStatesShift(nStatesCount); // old state -> new state
+	int cEssentialStates = 0;
+	for (nState = 0; nState < nStatesCount; nState++) {
+		if (nsUnessentialStates.contains(nState)) { // unessential state -> -1
+			nsStatesShift[nState] = g_nNoState;
+
+		} else { // essential state
+			nsStatesShift[nState] = cEssentialStates;
+			cEssentialStates++;
+		}
+	}
+
+	// create new FSM table (with new indexes)
+	QVector<STableRow> tableNew(cEssentialStates);
+	for (nState = 0; nState < nStatesCount; nState++) {
+		int nNewStateIdx = nsStatesShift[nState];
+		if (nNewStateIdx != g_nNoState) {
+			STableRow row = m_table[nState];
+			row.cell0.nNextState = nsStatesShift[row.cell0.nNextState];
+			row.cell1.nNextState = nsStatesShift[row.cell1.nNextState];
+			tableNew[nNewStateIdx] = row;
+		}
+	}
+
+	// substitute FSM table with a newly created one
+	m_table = tableNew;
+
+	return true;
+}
+
+QSet<int> CFsmCreator::FindUnessentialStates(bool fVerbose) const {
+	// count incoming arcs for each state
+	int nStatesCount = m_table.count();
+	QVector<int> nsIncomingArcs(nStatesCount, 0);
+	int nState;
+	for (nState = 0; nState < nStatesCount; nState++) {
+		const STableRow &row = m_table[nState];
+		nsIncomingArcs[row.cell0.nNextState]++;
+		nsIncomingArcs[row.cell1.nNextState]++;
+	}
+
+	// locate unessential states
+	QQueue<int> qsZeroStates; // states with zero incoming arcs
+	if (nsIncomingArcs[0] == 0) { // only this state might be with zero incoming arcs at the beginning
+		qsZeroStates.enqueue(0); // zero state
+	}
+	QSet<int> nsUnessentialStates;
+	while (!qsZeroStates.isEmpty()) {
+		int nZeroState = qsZeroStates.dequeue();
+		nsUnessentialStates << nZeroState;
+		const STableRow &row = m_table[nZeroState];
+		int nNextState0 = row.cell0.nNextState;
+		nsIncomingArcs[nNextState0]--;
+		if (nsIncomingArcs[nNextState0] == 0) {
+			qsZeroStates.enqueue(nNextState0);
+		}
+		int nNextState1 = row.cell1.nNextState;
+		nsIncomingArcs[nNextState1]--;
+		if (nsIncomingArcs[nNextState1] == 0) {
+			qsZeroStates.enqueue(nNextState1);
+		}
+
+		if (fVerbose) {
+			printf("remove state %i -> %i, %i\n", nZeroState, nNextState0, nNextState1);
+		}
+	}
+
+	return nsUnessentialStates;
 }
 
 CFsmCreator::TByteTable CFsmCreator::CreateByteTable(int nBitsAtOnce, CFsmCreator::EBitOrder bitOrder) const {
