@@ -5,6 +5,7 @@
 #include "ShiftRegister.h"
 
 /// CFsmTest::CBitFsmSearch - search with a bit SearchFSM
+template <bool fOptimize>
 class CFsmTest::CBitFsmSearch {
 public: // data
 	struct TSearchData {
@@ -25,20 +26,26 @@ public: // working methods
 };
 
 // implementation
-CFsmTest::CBitFsmSearch::TSearchData CFsmTest::CBitFsmSearch::InitEngine(const TPatterns &patterns) {
+template <bool fOptimize>
+typename CFsmTest::CBitFsmSearch<fOptimize>::TSearchData CFsmTest::CBitFsmSearch<fOptimize>::InitEngine(const TPatterns &patterns) {
 	CFsmCreator fsm(patterns);
 	fsm.GenerateTables();
+	if (fOptimize) {
+		fsm.OptimizeTables();
+	}
 	TSearchData data = {fsm.CreateFsmWrap<TBitSearchFsm>(), fsm.GetCollisionsCount(), 0};
 	data.wrap.fsm.Reset();
 
 	return data;
 }
 
-unsigned int CFsmTest::CBitFsmSearch::GetMemoryRequirements(const CFsmTest::CBitFsmSearch::TSearchData &data) {
+template <bool fOptimize>
+unsigned int CFsmTest::CBitFsmSearch<fOptimize>::GetMemoryRequirements(const typename CFsmTest::CBitFsmSearch<fOptimize>::TSearchData &data) {
 	return CFsmTest::GetTableSize(data.wrap).dwTotalSize;
 }
 
-CFsmTest::SFsmStatistics CFsmTest::CBitFsmSearch::GetFsmStatistics(const CFsmTest::CBitFsmSearch::TSearchData &data) {
+template <bool fOptimize>
+CFsmTest::SFsmStatistics CFsmTest::CBitFsmSearch<fOptimize>::GetFsmStatistics(const typename CFsmTest::CBitFsmSearch<fOptimize>::TSearchData &data) {
 	CFsmTest::SFsmStatistics stats;
 	stats.dwStatesCount = data.wrap.m_rows.count();
 	stats.dwOutputCellsCount = data.wrap.m_outputTable.count();
@@ -49,7 +56,8 @@ CFsmTest::SFsmStatistics CFsmTest::CBitFsmSearch::GetFsmStatistics(const CFsmTes
 	return stats;
 }
 
-CFsmTest::TFindingsList CFsmTest::CBitFsmSearch::ProcessByte(const unsigned char bData, CFsmTest::CBitFsmSearch::TSearchData *pSearchData) {
+template <bool fOptimize>
+CFsmTest::TFindingsList CFsmTest::CBitFsmSearch<fOptimize>::ProcessByte(const unsigned char bData, typename CFsmTest::CBitFsmSearch<fOptimize>::TSearchData *pSearchData) {
 	TFindingsList result;
 	int nBit;
 	for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {
@@ -77,7 +85,8 @@ CFsmTest::TFindingsList CFsmTest::CBitFsmSearch::ProcessByte(const unsigned char
 	return result;
 }
 
-unsigned int CFsmTest::CBitFsmSearch::ProcessByteIdle(const unsigned char bData, CFsmTest::CBitFsmSearch::TSearchData *pSearchData) {
+template <bool fOptimize>
+unsigned int CFsmTest::CBitFsmSearch<fOptimize>::ProcessByteIdle(const unsigned char bData, typename CFsmTest::CBitFsmSearch<fOptimize>::TSearchData *pSearchData) {
 	unsigned int cHits = 0;
 	int nBit;
 	for (nBit = 0; nBit < BITS_IN_BYTE; nBit++) {

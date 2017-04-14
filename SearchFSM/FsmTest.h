@@ -72,7 +72,7 @@ public:
 	bool TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, /* out, optional */ unsigned int *pdwHits = NULL);
 
 	// test engines' performance
-	bool TestBitFsmRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
+	bool TestBitFsmRate(unsigned int dwTestBytesCount, bool fOptimize, /* out */ SEnginePerformance *pResult);
 	bool TestNibbleFsmRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 	bool TestOctetFsmRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 	bool TestRegisterRate(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
@@ -92,7 +92,7 @@ private:
 	bool TestEnginePerformance(unsigned int dwTestBytesCount, /* out */ SEnginePerformance *pResult);
 
 private:
-	class CBitFsmSearch;
+	template <bool fOptimize> class CBitFsmSearch;
 	class CNibbleFsmSearch;
 	class COctetFsmSearch;
 	class CRegisterSearch;

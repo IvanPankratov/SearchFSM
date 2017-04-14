@@ -135,9 +135,12 @@ STestResult TestSpeed(const TPatterns patterns) {
 	Print(QString("\nSpeed tests (on %1 data):\n\n").arg(DataSizeToString(g_nTestSpeedBytes)));
 	STestResult result;
 	CFsmTest::SEnginePerformance performance;
-	bool fSuccess = tester.TestBitFsmRate(g_nTestSpeedBytes, &performance);
+	bool fSuccess = tester.TestBitFsmRate(g_nTestSpeedBytes, false, &performance);
 	PrintEnginePerformance("Bit SearchFSM (FSM-1)", fSuccess, performance);
 	result.perfFsm1 = performance;
+
+	tester.TestBitFsmRate(g_nTestSpeedBytes, true, &performance);
+	PrintEnginePerformance("Optimized Bit SearchFSM (FSM-1 opt)", fSuccess, performance);
 
 	fSuccess = tester.TestNibbleFsmRate(g_nTestSpeedBytes, &performance);
 	PrintEnginePerformance("Nibble SearchFSM (FSM-4)", fSuccess, performance);

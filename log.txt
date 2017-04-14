@@ -478,3 +478,8 @@ Refactoring: LCGs to separate header, small fixes, functions order
 FSM table optimization: removing unessential states
 Реализовал поиск и устранение несущественных состояний поискового автомата.
 Пока их количество не превышает 3% от общего числа состояний :(
+-
+Introduced table optimization to CFsmTest::CBitFsmSearch as a template argument
+Переделал класс CFsmTest::CBitFsmSearch в шаблонный класс с логическим параметром, отвечающим
+за наличие оптимизации таблиц.
+Добавил тестирование оптимизированной версии.

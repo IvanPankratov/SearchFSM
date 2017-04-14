@@ -57,7 +57,7 @@ bool CFsmTest::TraceFsm(int nDataLength) {
 bool CFsmTest::TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, unsigned int *pdwHits) {
 	// prepare engines (register and bit SearchFSM - must be created, Nibble and octet SearchFSM - try)
 	CRegisterSearch::TSearchData searchDataRegister = CRegisterSearch::InitEngine(m_patterns);
-	CBitFsmSearch::TSearchData searchDataBitFsm = CBitFsmSearch::InitEngine(m_patterns);
+	CBitFsmSearch<false>::TSearchData searchDataBitFsm = CBitFsmSearch<false>::InitEngine(m_patterns);
 
 	CNibbleFsmSearch::TSearchData *pSearchDataNibbleFsm = NULL;
 	try {
@@ -86,7 +86,7 @@ bool CFsmTest::TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, un
 	for (dwBytes = 0; dwBytes < dwTestBytesCount; dwBytes++) {
 		unsigned char bData = lcg.RandomByte();
 		TFindingsList finReg = CRegisterSearch::ProcessByte(bData, &searchDataRegister);
-		TFindingsList finBitFsm = CBitFsmSearch::ProcessByte(bData, &searchDataBitFsm);
+		TFindingsList finBitFsm = CBitFsmSearch<false>::ProcessByte(bData, &searchDataBitFsm);
 
 		if (!AreEqual(finBitFsm, finReg)) {
 			puts("FAIL! Bit SearchFSM != Test register!");
@@ -128,8 +128,12 @@ bool CFsmTest::TestCorrectness(unsigned int dwTestBytesCount, int nPrintHits, un
 }
 
 // test engines' performance
-bool CFsmTest::TestBitFsmRate(unsigned int dwTestBytesCount, CFsmTest::SEnginePerformance *pResult) {
-	return TestEnginePerformance<CBitFsmSearch>(dwTestBytesCount, pResult);
+bool CFsmTest::TestBitFsmRate(unsigned int dwTestBytesCount, bool fOptimize, CFsmTest::SEnginePerformance *pResult) {
+	if (fOptimize) {
+		return TestEnginePerformance<CBitFsmSearch<true> >(dwTestBytesCount, pResult);
+	} else {
+		return TestEnginePerformance<CBitFsmSearch<false> >(dwTestBytesCount, pResult);
+	}
 }
 
 bool CFsmTest::TestNibbleFsmRate(unsigned int dwTestBytesCount, CFsmTest::SEnginePerformance *pResult) {
