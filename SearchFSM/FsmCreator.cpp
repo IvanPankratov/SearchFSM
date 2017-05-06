@@ -370,10 +370,11 @@ void CFsmCreator::DumpStatePart(const SStatePart &part) {
 			printf(", ");
 		}
 		int nErrors = part.prefixes[idx].nErrors;
+		int nPrefixLength = part.prefixes[idx].nLength;
 		if (nErrors == 0 ) {
-			printf("%i", idx + 1);
+			printf("%i", nPrefixLength);
 		} else {
-			printf("%i-%i", idx + 1, nErrors);
+			printf("%i-%i", nPrefixLength, nErrors);
 		}
 	}
 }

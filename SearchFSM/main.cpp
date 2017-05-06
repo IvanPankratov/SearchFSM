@@ -157,7 +157,7 @@ STestResult TestSpeed(const TPatterns patterns) {
 	return result;
 }
 
-SPattern::TData GenarateData(int nBytes) {
+SPattern::TData GenerateData(int nBytes) {
 	SPattern::TData data;
 	int idx;
 	for (idx = 0; idx < nBytes; idx++) {
@@ -175,9 +175,9 @@ SPattern GeneratePattern(int nLength, int nErrors, bool fMasked = false) {
 	SPattern pat;
 	pat.nLength = nLength;
 	pat.nMaxErrors = nErrors;
-	pat.data = GenarateData(nBytes);
+	pat.data = GenerateData(nBytes);
 	if (fMasked) {
-		pat.mask = GenarateData(nBytes);
+		pat.mask = GenerateData(nBytes);
 	}
 
 	return pat;
