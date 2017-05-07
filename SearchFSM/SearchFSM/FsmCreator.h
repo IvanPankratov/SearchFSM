@@ -71,10 +71,10 @@ public:
 
 	// create SearchFSM at once - with stored tables
 	template <class TSearchFsm>
-	SFsmWrap<TSearchFsm> CreateFsmWrap();
+	SFsmWrap<TSearchFsm> CreateFsmWrap() const;
 
 	template <class TSearchFsm>
-	SFsmWrap<TSearchFsm> CreateByteFsmWrap(CFsmCreator::EBitOrder bitOrder = bitOrder_MsbFirst);
+	SFsmWrap<TSearchFsm> CreateByteFsmWrap(CFsmCreator::EBitOrder bitOrder = bitOrder_MsbFirst) const;
 
 private: // output table handling
 	template <class TSearchFsm>
@@ -134,7 +134,7 @@ private:
 
 // inline template members
 template<class TSearchFsm>
-CFsmCreator::SFsmWrap<TSearchFsm> CFsmCreator::CreateFsmWrap() {
+CFsmCreator::SFsmWrap<TSearchFsm> CFsmCreator::CreateFsmWrap() const {
 	QVector<typename TSearchFsm::STableRow> rows(GetStatesCount());
 	QVector<typename TSearchFsm::TOutput> outputs;
 	int nRow;
@@ -165,7 +165,7 @@ CFsmCreator::SFsmWrap<TSearchFsm> CFsmCreator::CreateFsmWrap() {
 }
 
 template<class TSearchFsm>
-CFsmCreator::SFsmWrap<TSearchFsm> CFsmCreator::CreateByteFsmWrap(CFsmCreator::EBitOrder bitOrder) {
+CFsmCreator::SFsmWrap<TSearchFsm> CFsmCreator::CreateByteFsmWrap(CFsmCreator::EBitOrder bitOrder) const {
 	QVector<typename TSearchFsm::STableRow> rows(GetStatesCount());
 	QVector<typename TSearchFsm::TOutput> outputs;
 

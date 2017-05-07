@@ -497,3 +497,6 @@ Reorganized project: new .pro file, module folders
 файл проекта переименовал в SearchFSM.pro.
 Попутно добавил пустую реализацию метода CFsmTest::CRegisterSearch::GetFsmStatistics() чтобы
 избежать предупреждения компилятора MinGW (странно, что раньше проблем замечено не было).
+-
+Refactoring: const modifier in CFsmCreator
+Добавил модификаторы const в пару методов класса CFsmCreator.
