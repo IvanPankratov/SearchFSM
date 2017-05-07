@@ -3,8 +3,8 @@
 #include <QCoreApplication>
 #include <QDateTime>
 
-#include "SearchFsm.h"
-#include "FsmCreator.h"
+#include "../SearchFSM/SearchFsm.h"
+#include "../SearchFSM/FsmCreator.h"
 #include "FsmTest.h"
 
 const int g_nTraceBits = 70;

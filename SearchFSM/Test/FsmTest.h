@@ -5,8 +5,8 @@
 
 #include <QVector>
 
-#include "SearchFsm.h"
-#include "FsmCreator.h"
+#include "../SearchFSM/SearchFsm.h"
+#include "../SearchFSM/FsmCreator.h"
 
 class CFsmTest {
 public:

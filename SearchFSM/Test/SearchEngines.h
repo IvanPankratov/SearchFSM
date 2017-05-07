@@ -336,6 +336,10 @@ unsigned int CFsmTest::CRegisterSearch::GetMemoryRequirements(const CFsmTest::CR
 	return data.reg.RequiredMemorySize();
 }
 
+CFsmTest::SFsmStatistics CFsmTest::CRegisterSearch::GetFsmStatistics(const CFsmTest::CRegisterSearch::TSearchData&) {
+	return CFsmTest::SFsmStatistics();
+}
+
 CFsmTest::TFindingsList CFsmTest::CRegisterSearch::ProcessByte(const unsigned char bData, CFsmTest::CRegisterSearch::TSearchData *pSearchData) {
 	TFindingsList result;
 	int nBit;

@@ -1,6 +1,6 @@
 #line 2 "ShiftRegister.cpp" // Make __FILE__ omit the path
 
-#include "Common.h"
+#include "../SearchFSM/Common.h"
 #include "ShiftRegister.h"
 
 static const int g_nChunkLength = sizeof(CShiftRegister::TChunk) * BITS_IN_BYTE;

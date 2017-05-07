@@ -15,17 +15,18 @@ CONFIG   -= app_bundle
 TEMPLATE = app
 
 
-SOURCES += main.cpp \
-	FsmCreator.cpp \
-	FsmTest.cpp \
-	ShiftRegister.cpp
+SOURCES += SearchFsm/FsmCreator.cpp \
+	Test/main.cpp \
+	Test/FsmTest.cpp \
+	Test/ShiftRegister.cpp
 
 HEADERS += \
-	Common.h \
-	SearchFsm.h \
-	FsmCreator.h \
-	FsmTest.h \
-	SearchEngines.h \
-	ShiftRegister.h \
-	WinTimer.h \
-	Lcg.h
+	SearchFsm/Common.h \
+	SearchFsm/SearchFsm.h \
+	SearchFsm/FsmCreator.h \
+	Test/FsmTest.h \
+	Test/SearchEngines.h \
+	Test/ShiftRegister.h \
+	Test/WinTimer.h \
+	Test/Lcg.h
+

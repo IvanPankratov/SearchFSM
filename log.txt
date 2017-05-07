@@ -488,3 +488,12 @@ Introduced table optimization to CFsmTest::CBitFsmSearch as a template argument
 Fixes: dump FSM state descrption error, "GenarateData" misprint
 Исправил ошибку в выводе описания состояния поискового автомата в процессе построения.
 Исправил опечатку в названии функции GenarateData.
+
+07.05.2017
+Reorganized project: new .pro file, module folders
+Переделал организацию проекта: создал подпапки SearchFSM/ для кода, ответственного непосредственно
+за создание и работу поисковых автоматов, и подпапку Test/ для кода, необходимого для тестирования
+автоматов.
+файл проекта переименовал в SearchFSM.pro.
+Попутно добавил пустую реализацию метода CFsmTest::CRegisterSearch::GetFsmStatistics() чтобы
+избежать предупреждения компилятора MinGW (странно, что раньше проблем замечено не было).

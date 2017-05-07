@@ -5,7 +5,7 @@
 
 #include <QVector>
 
-#include "Common.h"
+#include "../SearchFSM/Common.h"
 
 class CShiftRegister {
 public:
